@@ -5,10 +5,55 @@
 #ifndef MACHINE_BEREKENBAARHEID_GROEPS_OPDRACHT_SLR_H
 #define MACHINE_BEREKENBAARHEID_GROEPS_OPDRACHT_SLR_H
 
+#include <vector>
+#include <set>
+#include <map>
+#include <string>
+#include "../utils/json.hpp"
+#include "../grammers/CFG.h"
 
-class SLR {
+using json = nlohmann::json;
 
+
+struct Item {
+    int prod_index;   // index into CFG productions vector
+    int dot_pos;      // dot location in RHS of production (0..body.size())
+
+    // used for comparing items
+    bool operator<(const Item& o) const {
+        return (prod_index != o.prod_index)
+               ? prod_index < o.prod_index
+               : dot_pos < o.dot_pos;
+    }
 };
 
 
-#endif //MACHINE_BEREKENBAARHEID_GROEPS_OPDRACHT_SLR_H
+using State = std::vector<Item>;
+
+
+class SLR {
+public:
+    explicit SLR(CFG &cfg);
+
+    // parse a token sequence
+    bool parse(const std::vector<std::string> &tokens);
+
+    // Debug printing of LR(0) item sets
+    void print_states();
+
+    // Debug printing of ACTION/GOTO parsing table
+    void print_parsing_table();
+private:
+    std::set<Item> closure(const std::set<Item>& I);
+    std::set<Item> goto_state(const std::set<Item>& I, const std::string &symbol);
+    std::vector<std::string> followSet(const std::string& symbol);
+
+    // Build complete SLR parsing tables
+    void build();
+
+    // References
+    CFG &cfg_ref;
+    std::string start_symbol;
+};
+
+#endif // MACHINE_BEREKENBAARHEID_GROEPS_OPDRACHT_SLR_H

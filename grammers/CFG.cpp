@@ -363,3 +363,7 @@ json CFG::buildLL1Table() {
     }
     return tableJson;
 }
+
+void CFG::addProduction(const production &prod) {
+    productions.push_back(prod);
+}

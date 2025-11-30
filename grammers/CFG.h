@@ -30,6 +30,8 @@ public:
     void print();
     void ll();
 
+    void addProduction(const production &prod);
+
     void setProductions(const std::vector<production> &prods);
 
     void setVariables(const std::vector<std::string> &vars);
@@ -59,7 +61,7 @@ private:
     std::vector<std::string> followSet(const std::string& symbol);
     std::string stringifyBody(const std::vector<std::string> &body);
     void printLL1Table(const std::map<std::string, std::map<std::string, std::string>> &table,
-                            const std::vector<std::string> &headers);
+                       const std::vector<std::string> &headers);
 
     json buildLL1Table();
 
