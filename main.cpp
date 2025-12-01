@@ -1,10 +1,8 @@
-//
-// Created by abdir on 30/11/2025.
-//
-
 #include <iostream>
+#include "protocols/HTTP10/HTTP10Protocol.h"
+#include "protocols/HTTP10/HTTP10Tokenizer.h"
+
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
+    std::cout<<"helloworld"<<std::endl;
 }

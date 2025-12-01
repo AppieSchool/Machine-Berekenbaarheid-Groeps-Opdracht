@@ -1,0 +1,2 @@
+GET /in💀dex.html HTTP/1.0
+User-Agent: Test
