@@ -15,62 +15,142 @@ SLR::SLR(CFG &cfg) : cfg_ref(cfg){
 }
 
 void SLR::print_states() {
-    std::cout << "Printing SLR states" << std::endl;
-
+    int id = 0;
+    for (const auto &state : C) {
+        std::cout << "State " << id++ << ":\n";
+        for (const auto &it : state) {
+            const auto &p = prods[it.prod_index];
+            std::cout << "  " << p.lhs << " -> ";
+            for (size_t i = 0; i < p.body.size(); ++i) {
+                if (i == static_cast<size_t>(it.dot_pos)) std::cout << ". ";
+                std::cout << p.body[i] << " ";
+            }
+            if (it.dot_pos == static_cast<int>(p.body.size())) std::cout << ".";
+            std::cout << "\n";
+        }
+        std::cout << std::endl;
+    }
 }
 
 void SLR::print_parsing_table() {
-    std::cout << "Printing SLR parsing table" << std::endl;
+    std::cout << "ACTION table:\n";
+    for (const auto &entry : ACTION) {
+        int state = entry.first.first;
+        const std::string &sym = entry.first.second;
+        const std::string &act = entry.second;
+        std::cout << "  ACTION[" << state << ", " << sym << "] = " << act << "\n";
+    }
 
+    std::cout << "\nGOTO table:\n";
+    for (const auto &entry : GOTO) {
+        int state = entry.first.first;
+        const std::string &sym = entry.first.second;
+        int to = entry.second;
+        std::cout << "  GOTO[" << state << ", " << sym << "] = " << to << "\n";
+    }
 }
-
 void SLR::build() {
+    // 0. Augment grammar
     start_symbol = cfg_ref.getStartSymbol() + "'";
-    production augmented = production(start_symbol, {cfg_ref.getStartSymbol()});
-    cfg_ref.addProduction(augmented);
-    cfg_ref.setStartSymbol( start_symbol);
+    production augmented(start_symbol, { cfg_ref.getStartSymbol() });
+    prods.insert(prods.begin(), augmented);
+    vars.insert(vars.begin(), start_symbol);
+    cfg_ref.setStartSymbol(start_symbol);
+    cfg_ref.setProductions(prods);
+    cfg_ref.setVariables(vars);
 
 
-    // Steps:
-    // 1. Construct canonical LR(0) item sets
-    auto I0 = std::set<Item>{ Item{0, 0} }; // S' -> .S
-
-    // C is the set of all item sets
-    auto C = std::set<std::set<Item>>{};
+    // 1. Canonical LR(0) Collection
+    std::set<Item> I0 { Item{0, 0} };
     C.insert(closure(I0));
 
-    // repeat until no new sets added
     bool changed = true;
-    while(changed) {
+    while (changed) {
         changed = false;
-        // for each set in C
-        for(const auto &I : C) {
-            // for each grammar symbol X
-            auto allSymbols = terms;
-            allSymbols.insert(allSymbols.end(), vars.begin(), vars.end());
-            for(const auto &X : allSymbols) {
+
+        for (const auto &I : C) {
+            std::vector<std::string> symbols = terms;
+            symbols.insert(symbols.end(), vars.begin(), vars.end());
+
+            for (const auto &X : symbols) {
                 auto J = goto_state(I, X);
-                if(!J.empty() && C.insert(J).second) {
-                    changed = true; // new set added
+                if (!J.empty() && C.insert(J).second) {
+                    changed = true;
                 }
             }
         }
     }
 
-    // 2. Compute FOLLOW sets for all non-terminalsWithDollar
-    // for each non-terminal A in the grammar
-    auto follow_sets = std::map<std::string, std::set<std::string>>{};
-    for(const auto &A : vars) {
-        //compute FOLLOW(A)
-        auto followA = cfg_ref.followSet(A);
-        follow_sets[A] = std::set<std::string>(followA.begin(), followA.end());
+    // 2. FOLLOW sets
+    std::map<std::string, std::set<std::string>> follow_sets;
+
+    for (const auto &A : vars) {
+        auto f = cfg_ref.followSet(A);
+        follow_sets[A] = std::set<std::string>(f.begin(), f.end());
     }
-    // 3. Construct Parsing Table
-    // Initialize ACTION and GOTO tables
 
+    // 3. Assign state numbers
+    std::map<std::set<Item>, int> state_id;
+    int next_id = 0;
+    for (const auto &I : C) {
+        state_id[I] = next_id++;
+    }
 
+    // 4. Build ACTION and GOTO tables
+    ACTION.clear();
+    GOTO.clear();
 
+    for (const auto &I : C) {
+        int state = state_id[I];
+
+        // A. SHIFT: A → α . a β     (a terminal)
+        for (const auto &item : I) {
+            const auto &prod = prods[item.prod_index];
+
+            if (item.dot_pos < prod.body.size()) {
+                std::string a = prod.body[item.dot_pos];
+
+                // Check if 'a' is terminal
+                if (std::find(terms.begin(), terms.end(), a) != terms.end()) {
+                    auto J = goto_state(I, a);
+                    if (!J.empty()) {
+                        int to = state_id[J];
+                        ACTION[{state, a}] = "s" + std::to_string(to);
+                    }
+                }
+            }
+        }
+
+        // B. REDUCE:  A → α .     (dot at end)
+        for (const auto &item : I) {
+            const auto &prod = prods[item.prod_index];
+
+            if (item.dot_pos == prod.body.size()) {
+                std::string A = prod.lhs;
+
+                // ACCEPT rule for S' → S .
+                if (A == start_symbol) {
+                    ACTION[{state, "<EOS>"}] = "acc";
+                } else {
+                    for (const auto &b : follow_sets[A]) {
+                        ACTION[{state, b}] = "r" + std::to_string(item.prod_index);
+                    }
+                }
+            }
+        }
+
+        // C. GOTO entries for nonterminals
+        for (const auto &X : vars) {
+            auto J = goto_state(I, X);
+            if (!J.empty()) {
+                int to = state_id[J];
+                GOTO[{state, X}] = to;
+            }
+        }
+    }
 }
+
+
 
 std::set<Item> SLR::closure(const std::set<Item> &I) {
     std::set<Item> J = I;
@@ -124,7 +204,82 @@ std::set<Item> SLR::goto_state(const std::set<Item> &I, const std::string &symbo
     return closure(J);
 }
 
+bool SLR::parse(const std::vector<std::string> &tokens)
+{
+    // Stack contains state numbers
+    std::vector<int> stack;
+    stack.push_back(0);
 
-bool SLR::parse(const std::vector<std::string> &tokens) {
-    return false;
+    // Input buffer with <EOS> appended
+    std::vector<std::string> input = tokens;
+    input.push_back("<EOS>");
+
+    int ip = 0; // input pointer
+
+    while (true)
+    {
+        int state = stack.back();
+        std::string a = input[ip];
+
+        auto action_it = ACTION.find({state, a});
+
+        // Error: no ACTION entry
+        if (action_it == ACTION.end()) {
+            std::cout << "Parse error: no ACTION["
+                      << state << ", " << a << "]\n";
+            return false;
+        }
+
+        std::string action = action_it->second;
+
+        // SHIFT
+        if (action[0] == 's')
+        {
+            int next_state = std::stoi(action.substr(1));
+            stack.push_back(next_state);
+            ip++;
+            continue;
+        }
+
+            // REDUCE
+        else if (action[0] == 'r')
+        {
+            int prod_index = std::stoi(action.substr(1));
+            const production &p = prods[prod_index];
+
+            // pop |body| symbols from stack
+            for (int i = 0; i < p.body.size(); i++) {
+                stack.pop_back();
+            }
+
+            int state_after_pop = stack.back();
+
+            // goto(state_after_pop, A)
+            auto goto_it = GOTO.find({state_after_pop, p.lhs});
+            if (goto_it == GOTO.end()) {
+                std::cout << "Parse error: no GOTO["
+                          << state_after_pop << ", " << p.lhs << "]\n";
+                return false;
+            }
+
+            stack.push_back(goto_it->second);
+            continue;
+        }
+
+
+            // ACCEPT
+        else if (action == "acc") {
+            return true;
+        }
+
+            // INVALID ACTION
+        else
+        {
+            std::cout << "Parse error: invalid action '"
+                      << action << "'\n";
+            return false;
+        }
+    }
 }
+
+

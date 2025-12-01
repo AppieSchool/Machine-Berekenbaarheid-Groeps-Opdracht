@@ -40,7 +40,7 @@ public:
     explicit SLR(CFG &cfg);
 
     // parse a token sequence
-    [[nodiscard]] static bool parse(const std::vector<std::string> &tokens) ;
+    [[nodiscard]] bool parse(const std::vector<std::string> &tokens);
 
     // Debug printing of LR(0) item sets
     void print_states();
@@ -64,6 +64,7 @@ private:
     // Data structures
     std::map<std::pair<int, std::string>, std::string> ACTION;
     std::map<std::pair<int, std::string>, int> GOTO;
+    std::set<std::set<Item>> C; // Canonical collection of LR(0) items
 };
 
 #endif // MACHINE_BEREKENBAARHEID_GROEPS_OPDRACHT_SLR_H
