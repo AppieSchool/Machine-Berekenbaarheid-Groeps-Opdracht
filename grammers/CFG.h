@@ -54,6 +54,7 @@ public:
 
     explicit CFG(std::string jsonFile);
     CFG(json &jsonObj);
+    CFG() = default;
     ~CFG() = default;
 private:
     std::vector<production> productions;
