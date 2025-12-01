@@ -25,6 +25,10 @@ struct Item {
                ? prod_index < o.prod_index
                : dot_pos < o.dot_pos;
     }
+
+    bool operator==(const Item& o) const {
+        return prod_index == o.prod_index && dot_pos == o.dot_pos;
+    }
 };
 
 
@@ -36,7 +40,7 @@ public:
     explicit SLR(CFG &cfg);
 
     // parse a token sequence
-    bool parse(const std::vector<std::string> &tokens);
+    [[nodiscard]] static bool parse(const std::vector<std::string> &tokens) ;
 
     // Debug printing of LR(0) item sets
     void print_states();
@@ -46,7 +50,6 @@ public:
 private:
     std::set<Item> closure(const std::set<Item>& I);
     std::set<Item> goto_state(const std::set<Item>& I, const std::string &symbol);
-    std::vector<std::string> followSet(const std::string& symbol);
 
     // Build complete SLR parsing tables
     void build();
@@ -54,6 +57,13 @@ private:
     // References
     CFG &cfg_ref;
     std::string start_symbol;
+    std::vector<production> prods;
+    std::vector<std::string> vars;
+    std::vector<std::string> terms;
+
+    // Data structures
+    std::map<std::pair<int, std::string>, std::string> ACTION;
+    std::map<std::pair<int, std::string>, int> GOTO;
 };
 
 #endif // MACHINE_BEREKENBAARHEID_GROEPS_OPDRACHT_SLR_H

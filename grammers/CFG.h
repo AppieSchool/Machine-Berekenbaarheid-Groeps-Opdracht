@@ -48,6 +48,10 @@ public:
 
     [[nodiscard]] const std::string &getStartSymbol() const;
 
+    std::vector<std::string> firstSet(const std::string& symbol);
+
+    std::vector<std::string> followSet(const std::string& symbol);
+
     explicit CFG(std::string jsonFile);
     CFG(json &jsonObj);
     ~CFG() = default;
@@ -57,8 +61,7 @@ private:
     std::vector<std::string> terminals;
     std::string startSymbol;
     std::string filename;
-    std::vector<std::string> firstSet(const std::string& symbol);
-    std::vector<std::string> followSet(const std::string& symbol);
+
     std::string stringifyBody(const std::vector<std::string> &body);
     void printLL1Table(const std::map<std::string, std::map<std::string, std::string>> &table,
                        const std::vector<std::string> &headers);

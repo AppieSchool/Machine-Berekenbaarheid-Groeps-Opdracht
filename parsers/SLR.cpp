@@ -5,6 +5,11 @@
 #include "SLR.h"
 
 SLR::SLR(CFG &cfg) : cfg_ref(cfg){
+    // Copy productions from CFG
+    prods = cfg_ref.getProductions();
+    vars = cfg_ref.getVariables();
+    terms = cfg_ref.getTerminals();
+
     // Build the parser
     build();
 }
@@ -20,7 +25,6 @@ void SLR::print_parsing_table() {
 }
 
 void SLR::build() {
-    std::cout << "Building SLR parser" << std::endl;
     start_symbol = cfg_ref.getStartSymbol() + "'";
     production augmented = production(start_symbol, {cfg_ref.getStartSymbol()});
     cfg_ref.addProduction(augmented);
@@ -30,17 +34,19 @@ void SLR::build() {
     // Steps:
     // 1. Construct canonical LR(0) item sets
     auto I0 = std::set<Item>{ Item{0, 0} }; // S' -> .S
+
+    // C is the set of all item sets
     auto C = std::set<std::set<Item>>{};
     C.insert(closure(I0));
 
+    // repeat until no new sets added
     bool changed = true;
     while(changed) {
         changed = false;
         // for each set in C
         for(const auto &I : C) {
             // for each grammar symbol X
-            auto allSymbols = cfg_ref.getTerminals();
-            auto vars = cfg_ref.getVariables();
+            auto allSymbols = terms;
             allSymbols.insert(allSymbols.end(), vars.begin(), vars.end());
             for(const auto &X : allSymbols) {
                 auto J = goto_state(I, X);
@@ -51,16 +57,22 @@ void SLR::build() {
         }
     }
 
-    // 2. Compute FOLLOW sets for all non-terminals
-
+    // 2. Compute FOLLOW sets for all non-terminalsWithDollar
+    // for each non-terminal A in the grammar
+    auto follow_sets = std::map<std::string, std::set<std::string>>{};
+    for(const auto &A : vars) {
+        //compute FOLLOW(A)
+        auto followA = cfg_ref.followSet(A);
+        follow_sets[A] = std::set<std::string>(followA.begin(), followA.end());
+    }
     // 3. Construct Parsing Table
+    // Initialize ACTION and GOTO tables
+
+
 
 }
 
 std::set<Item> SLR::closure(const std::set<Item> &I) {
-    auto &prods = cfg_ref.getProductions();
-    auto &vars = cfg_ref.getVariables();
-
     std::set<Item> J = I;
 
     // repeat until no new items added
@@ -99,8 +111,6 @@ std::set<Item> SLR::closure(const std::set<Item> &I) {
 
 std::set<Item> SLR::goto_state(const std::set<Item> &I, const std::string &symbol) {
     auto J = std::set<Item>{};
-    auto &prods = cfg_ref.getProductions();
-
     for(const auto &it : I) {
         const auto &prod = prods[it.prod_index];
         // if dot before symbol
@@ -114,9 +124,6 @@ std::set<Item> SLR::goto_state(const std::set<Item> &I, const std::string &symbo
     return closure(J);
 }
 
-std::vector<std::string> SLR::followSet(const std::string &symbol) {
-    return {};
-}
 
 bool SLR::parse(const std::vector<std::string> &tokens) {
     return false;
