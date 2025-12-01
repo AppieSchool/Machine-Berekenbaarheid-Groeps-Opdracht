@@ -158,41 +158,93 @@ const std::vector<std::string> &CFG::getTerminals() const { return terminals; }
 
 const std::string &CFG::getStartSymbol() const { return startSymbol;}
 
+// FIXED: Improved firstSet with proper epsilon handling for sequences
 std::vector<std::string> CFG::firstSet(const std::string& symbol) {
-    if(std::find(terminals.begin(), terminals.end(), symbol) != terminals.end()) {
-        return {symbol};
+    // Check if we've already computed this
+    if (firstCache.count(symbol)) {
+        return firstCache[symbol];
     }
+
     std::vector<std::string> result;
+
+    // Base case: if it's a terminal, return it
+    if(std::find(terminals.begin(), terminals.end(), symbol) != terminals.end()) {
+        result.push_back(symbol);
+        firstCache[symbol] = result;
+        return result;
+    }
+
+    // For variables, look at all productions
     for(const auto &prod : productions) {
         if(prod.lhs == symbol) {
             if(prod.body.empty()) {
-                result.push_back("");
+                // Empty production means epsilon
+                if(std::find(result.begin(), result.end(), "") == result.end()) {
+                    result.push_back("");
+                }
             } else {
-                // Left most-symbol
-                const std::string& firstSymbol = prod.body[0];
-                // if it's a terminal, add it to the result
-                if(std::find(terminals.begin(), terminals.end(), firstSymbol) != terminals.end()) {
-                    if(std::find(result.begin(), result.end(), firstSymbol) == result.end()) {
-                        result.push_back(firstSymbol);
-                    }
-                } else {
-                    // if it's a variable, recursively get its first set
-                    std::vector<std::string> firstSetOfFirstSymbol = firstSet(firstSymbol);
-                    for (const auto &sym: firstSetOfFirstSymbol) {
-                        if (std::find(result.begin(), result.end(), sym) == result.end()) {
-                            result.push_back(sym);
+                // Process the sequence of symbols
+                bool allHaveEpsilon = true;
+                for (size_t i = 0; i < prod.body.size(); ++i) {
+                    const std::string& currentSymbol = prod.body[i];
+
+                    if(std::find(terminals.begin(), terminals.end(), currentSymbol) != terminals.end()) {
+                        // Terminal: add it and stop
+                        if(std::find(result.begin(), result.end(), currentSymbol) == result.end()) {
+                            result.push_back(currentSymbol);
+                        }
+                        allHaveEpsilon = false;
+                        break;
+                    } else {
+                        // Variable: get its FIRST set
+                        std::vector<std::string> firstSetOfCurrent = firstSet(currentSymbol);
+                        bool hasEpsilon = false;
+
+                        for (const auto &sym: firstSetOfCurrent) {
+                            if (sym == "") {
+                                hasEpsilon = true;
+                            } else if (std::find(result.begin(), result.end(), sym) == result.end()) {
+                                result.push_back(sym);
+                            }
+                        }
+
+                        // If this symbol doesn't have epsilon, stop here
+                        if (!hasEpsilon) {
+                            allHaveEpsilon = false;
+                            break;
                         }
                     }
                 }
 
+                // If all symbols in the sequence can derive epsilon, add epsilon
+                if (allHaveEpsilon && std::find(result.begin(), result.end(), "") == result.end()) {
+                    result.push_back("");
+                }
             }
         }
     }
+
     std::sort(result.begin(), result.end());
+    firstCache[symbol] = result;
     return result;
 }
 
+// FIXED: followSet with memoization and cycle detection
 std::vector<std::string> CFG::followSet(const std::string& symbol) {
+    // Check if we've already computed this
+    if (followCache.count(symbol)) {
+        return followCache[symbol];
+    }
+
+    // Check if we're currently computing this (cycle detection)
+    if (followInProgress.count(symbol)) {
+        // Return empty set to break the cycle
+        return {};
+    }
+
+    // Mark that we're computing this symbol's FOLLOW set
+    followInProgress.insert(symbol);
+
     std::vector<std::string> result;
 
     // Add <EOS> if the symbol is the start symbol
@@ -203,31 +255,43 @@ std::vector<std::string> CFG::followSet(const std::string& symbol) {
     for (const auto& prod : productions) {
         for (size_t i = 0; i < prod.body.size(); ++i) {
             if (prod.body[i] == symbol) {
-                // Case 1: Symbol is followed by other symbols in the production
-                if (i + 1 < prod.body.size()) {
-                    const std::string& nextSymbol = prod.body[i + 1];
+                // Look at what follows this symbol
+                bool allFollowingHaveEpsilon = true;
 
-                    if (std::find(variables.begin(), variables.end(), nextSymbol) == variables.end()) {
-                        // If the next symbol is a terminal, add it to the result
-                        result.push_back(nextSymbol);
+                for (size_t j = i + 1; j < prod.body.size(); ++j) {
+                    const std::string& nextSymbol = prod.body[j];
+
+                    if (std::find(terminals.begin(), terminals.end(), nextSymbol) != terminals.end()) {
+                        // Terminal: add it and we're done
+                        if (std::find(result.begin(), result.end(), nextSymbol) == result.end()) {
+                            result.push_back(nextSymbol);
+                        }
+                        allFollowingHaveEpsilon = false;
+                        break;
                     } else {
-                        // If the next symbol is a variable, add its FIRST set
+                        // Variable: add its FIRST set (except epsilon)
                         std::vector<std::string> firstSetOfNext = firstSet(nextSymbol);
+                        bool hasEpsilon = false;
+
                         for (const auto& sym : firstSetOfNext) {
-                            if (sym != "" && std::find(result.begin(), result.end(), sym) == result.end()) {
+                            if (sym == "") {
+                                hasEpsilon = true;
+                            } else if (std::find(result.begin(), result.end(), sym) == result.end()) {
                                 result.push_back(sym);
                             }
                         }
 
-                        // If epsilon is in the FIRST set, continue to the next symbol
-                        if (std::find(firstSetOfNext.begin(), firstSetOfNext.end(), "") != firstSetOfNext.end()) {
-                            continue;
+                        // If this symbol doesn't have epsilon, stop here
+                        if (!hasEpsilon) {
+                            allFollowingHaveEpsilon = false;
+                            break;
                         }
                     }
                 }
 
-                // Case 2: Symbol is at the end of the production
-                if (i + 1 == prod.body.size()) {
+                // If at end OR all following symbols can derive epsilon,
+                // add FOLLOW(lhs) unless lhs == symbol (to avoid immediate recursion)
+                if (allFollowingHaveEpsilon && prod.lhs != symbol) {
                     std::vector<std::string> followSetOfLHS = followSet(prod.lhs);
                     for (const auto& sym : followSetOfLHS) {
                         if (std::find(result.begin(), result.end(), sym) == result.end()) {
@@ -240,6 +304,10 @@ std::vector<std::string> CFG::followSet(const std::string& symbol) {
     }
 
     std::sort(result.begin(), result.end());
+
+    // Remove from in-progress set and cache the result
+    followInProgress.erase(symbol);
+    followCache[symbol] = result;
 
     return result;
 }
@@ -281,6 +349,11 @@ void CFG::printLL1Table(const std::map<std::string, std::map<std::string, std::s
 }
 
 json CFG::buildLL1Table() {
+    // Clear caches before building table
+    firstCache.clear();
+    followCache.clear();
+    followInProgress.clear();
+
     std::map<std::string, std::map<std::string, std::vector<std::string>>> table;
     std::vector<std::string> headers = terminals;
     headers.push_back("<EOS>");
@@ -290,12 +363,11 @@ json CFG::buildLL1Table() {
         std::string A = p.lhs;
         std::vector<std::string> alpha = p.body;
 
-        // Get FIRST(alpha)
+        // Get FIRST(alpha) - compute for the entire sequence
         std::vector<std::string> firstAlpha;
-        // Flag to indicate if we should continue to the next symbol
         bool continueToNext = true;
 
-        for (int i = 0; i < alpha.size() && continueToNext; ++i) {
+        for (size_t i = 0; i < alpha.size() && continueToNext; ++i) {
             const std::string& currentSymbol = alpha[i];
 
             if (std::find(terminals.begin(), terminals.end(), currentSymbol) != terminals.end()) {
@@ -318,38 +390,57 @@ json CFG::buildLL1Table() {
             }
         }
 
-        // If all symbols can derive epsilon
+        // If all symbols can derive epsilon (or alpha is empty)
         bool hasEpsilon = continueToNext;
 
-        // add production to table
+        // Add production to table for each terminal in FIRST(alpha)
         for (const auto& terminal : firstAlpha) {
-            table[A][terminal] = alpha;
+            if (table[A].count(terminal)) {
+                // CONFLICT DETECTED!
+                std::cerr << "WARNING: LL(1) conflict detected for [" << A << ", " << terminal << "]" << std::endl;
+                std::cerr << "  Existing: " << A << " -> ";
+                for (const auto& s : table[A][terminal]) std::cerr << s << " ";
+                std::cerr << std::endl << "  New:      " << A << " -> ";
+                for (const auto& s : alpha) std::cerr << s << " ";
+                std::cerr << std::endl;
+            } else {
+                table[A][terminal] = alpha;
+            }
         }
 
-        // add to FOLLOW if epsilon in FIRST
+        // If epsilon in FIRST(alpha), add to FOLLOW(A)
         if (hasEpsilon) {
             std::vector<std::string> followA = followSet(A);
             for (const auto& terminal : followA) {
-                // Don't overwrite existing entries
-                if (!table[A].count(terminal)) {
-                    if (alpha.empty()) {
-                        table[A][terminal] = {""};
-                    } else {
-                        table[A][terminal] = alpha;
+                if (table[A].count(terminal)) {
+                    // Only report conflict if it's a different production
+                    bool isDifferent = (table[A][terminal].size() != alpha.size());
+                    if (!isDifferent) {
+                        for (size_t i = 0; i < alpha.size(); ++i) {
+                            if (table[A][terminal][i] != alpha[i]) {
+                                isDifferent = true;
+                                break;
+                            }
+                        }
                     }
-                }else{
-
+                    if (isDifferent) {
+                        std::cerr << "WARNING: LL(1) conflict detected for [" << A << ", " << terminal << "]" << std::endl;
+                    }
+                } else {
+                    table[A][terminal] = alpha.empty() ? std::vector<std::string>{""} : alpha;
                 }
             }
         }
     }
 
     // Fill empty cells with <ERR>
-    for (const auto& A : variables)
-        for (const auto& t : headers)
-            if (!table[A].count(t)){
+    for (const auto& A : variables) {
+        for (const auto& t : headers) {
+            if (!table[A].count(t)) {
                 table[A][t] = {"<ERR>"};
             }
+        }
+    }
 
     json tableJson;
 
@@ -366,4 +457,8 @@ json CFG::buildLL1Table() {
 
 void CFG::addProduction(const production &prod) {
     productions.push_back(prod);
+    // Clear caches when grammar changes
+    firstCache.clear();
+    followCache.clear();
+    followInProgress.clear();
 }

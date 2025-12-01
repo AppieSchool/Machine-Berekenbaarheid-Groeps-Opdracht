@@ -64,8 +64,9 @@ private:
                        const std::vector<std::string> &headers);
 
     json buildLL1Table();
-
-
+    std::map<std::string, std::vector<std::string>> firstCache;
+    std::map<std::string, std::vector<std::string>> followCache;
+    std::set<std::string> followInProgress;
     void readJsonObject(json &jsonObj);
 };
 
