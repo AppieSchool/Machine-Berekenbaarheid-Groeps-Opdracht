@@ -25,7 +25,10 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 
-# Generated files
+# Generated visualization output (kept separate from code)
+visualization/output/
+
+# Generated files (catch any stray ones)
 *.dot
 *.png
 *.svg
