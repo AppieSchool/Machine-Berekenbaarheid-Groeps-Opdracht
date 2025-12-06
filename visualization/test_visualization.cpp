@@ -42,8 +42,7 @@ int main() {
     cout << "Generated DOT format:\n";
     cout << dot << "\n";
     
-    // Save to output folder (keeps generated files separate from code)
-    DotGenerator::saveToFile(tree, "visualization/output/parse_tree.dot");
+    DotGenerator::generateImage(tree, "visualization/output/tree.png");
     
     return 0;
 }

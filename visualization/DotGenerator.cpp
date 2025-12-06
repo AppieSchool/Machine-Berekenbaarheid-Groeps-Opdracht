@@ -1,6 +1,7 @@
 #include "DotGenerator.h"
 #include <fstream>
 #include <iostream>
+#include <cstdlib>
 
 using namespace std;
 
@@ -43,8 +44,22 @@ void DotGenerator::saveToFile(const ParseTree& root, const string& filename) {
         file << dot;
         file.close();
         cout << "DOT file saved to: " << filename << "\n";
-        cout << "Generate image with: dot -Tpng " << filename << " -o output.png\n";
     } else {
         cerr << "Error: Could not open file " << filename << "\n";
+    }
+}
+
+void DotGenerator::generateImage(const ParseTree& root, const string& pngFilename) {
+    string dotFilename = pngFilename.substr(0, pngFilename.rfind('.')) + ".dot";
+    saveToFile(root, dotFilename);
+    
+    string command = "dot -Tpng \"" + dotFilename + "\" -o \"" + pngFilename + "\"";
+    int result = system(command.c_str());
+    
+    if (result == 0) {
+        cout << "PNG image saved to: " << pngFilename << "\n";
+    } else {
+        cerr << "Error: Failed to generate PNG. Is Graphviz installed?\n";
+        cerr << "Install with: brew install graphviz\n";
     }
 }

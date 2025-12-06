@@ -11,6 +11,7 @@ class DotGenerator {
 public:
     static string generate(const ParseTree& root);
     static void saveToFile(const ParseTree& root, const string& filename);
+    static void generateImage(const ParseTree& root, const string& pngFilename);
 
 private:
     static void generateHelper(const ParseTree& node, ostringstream& out, int& nodeCounter);
