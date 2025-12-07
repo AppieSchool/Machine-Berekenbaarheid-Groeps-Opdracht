@@ -4,10 +4,7 @@
     "RequestLine",
     "Method",
     "URI",
-    "Path",
-    "PathTail",
-    "Segment",
-    "SegmentTail",
+    "URITail",
     "Version",
     "Headers",
     "Header",
@@ -33,40 +30,41 @@
   "Start": "Request",
 
   "Productions": [
-    { "head": "Request",       "body": ["RequestLine", "Headers", "CRLF"] },
+    { "head": "Request", "body": ["RequestLine", "Headers", "CRLF"] },
 
-    { "head": "RequestLine",   "body": ["Method", "SP", "URI", "SP", "Version", "CRLF"] },
+    {
+      "head": "RequestLine",
+      "body": ["Method", "SP", "URI", "SP", "Version", "CRLF"]
+    },
 
-    { "head": "Method",        "body": ["METHOD_GET"] },
-    { "head": "Method",        "body": ["METHOD_POST"] },
-    { "head": "Method",        "body": ["METHOD_HEAD"] },
+    { "head": "Method", "body": ["METHOD_GET"] },
+    { "head": "Method", "body": ["METHOD_POST"] },
+    { "head": "Method", "body": ["METHOD_HEAD"] },
 
-    { "head": "URI",           "body": ["SLASH", "Path"] },
+    { "head": "URI", "body": ["SLASH", "IDENT", "URITail"] },
 
-    { "head": "Path",          "body": ["Segment", "PathTail"] },
+    { "head": "URITail", "body": ["DOT", "IDENT", "URITail"] },
+    { "head": "URITail", "body": ["SLASH", "IDENT", "URITail"] },
+    { "head": "URITail", "body": [] },
 
-    { "head": "PathTail",      "body": ["SLASH", "Path"] },
-    { "head": "PathTail",      "body": [] },
+    { "head": "Version", "body": ["HTTP_VERSION_1_0"] },
 
-    { "head": "Segment",       "body": ["IDENT", "SegmentTail"] },
+    { "head": "Headers", "body": ["Header", "Headers"] },
+    { "head": "Headers", "body": [] },
 
-    { "head": "SegmentTail",   "body": ["DOT", "IDENT", "SegmentTail"] },
-    { "head": "SegmentTail",   "body": [] },
+    {
+      "head": "Header",
+      "body": ["HeaderName", "COLON", "SP", "HeaderValue", "CRLF"]
+    },
 
-    { "head": "Version",       "body": ["HTTP_VERSION_1_0"] },
+    { "head": "HeaderName", "body": ["IDENT"] },
 
-    { "head": "Headers",       "body": ["Header", "Headers"] },
-    { "head": "Headers",       "body": [] },
+    { "head": "HeaderValue", "body": ["ValueToken", "ValueTail"] },
 
-    { "head": "Header",        "body": ["HeaderName", "COLON", "HeaderValue", "CRLF"] },
+    { "head": "ValueTail", "body": ["SP", "ValueToken", "ValueTail"] },
+    { "head": "ValueTail", "body": ["SLASH", "ValueToken", "ValueTail"] },
+    { "head": "ValueTail", "body": [] },
 
-    { "head": "HeaderName",    "body": ["IDENT"] },
-
-    { "head": "HeaderValue",   "body": ["ValueToken", "ValueTail"] },
-
-    { "head": "ValueTail",     "body": ["SP", "ValueToken", "ValueTail"] },
-    { "head": "ValueTail",     "body": [] },
-
-    { "head": "ValueToken",    "body": ["IDENT"] }
+    { "head": "ValueToken", "body": ["IDENT"] }
   ]
 }

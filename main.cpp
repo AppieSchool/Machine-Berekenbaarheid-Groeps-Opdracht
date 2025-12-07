@@ -90,9 +90,10 @@ int main(int argc, char* argv[]) {
     vector<Token> tokens = tokenizer.tokenize(input);
     printTokens(tokens);
 
-    // Convert tokens to terminal names for parser
+    // Convert tokens to terminal names for parser (skip END_OF_INPUT, parser adds its own)
     vector<string> terminalSequence;
     for (const auto& token : tokens) {
+        if (token.base == BaseToken::END_OF_INPUT) continue;  // Parser adds <EOS> itself
         terminalSequence.push_back(tokenToTerminal(token));
     }
 
