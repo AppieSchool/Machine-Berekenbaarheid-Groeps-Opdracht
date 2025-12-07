@@ -14,6 +14,7 @@ add_executable(Machine-Berekenbaarheid-Groeps-Opdracht
         protocols/HTTP10/HTTP10Tokenizer.cpp
         grammers/CFG_CYK.cpp
         visualization/DotGenerator.cpp
+        visualization/HTTPTreeBuilder.cpp
 )
 
 

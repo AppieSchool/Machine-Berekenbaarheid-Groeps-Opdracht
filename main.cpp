@@ -7,7 +7,7 @@
 #include "protocols/HTTP10/HTTP10Tokenizer.h"
 #include "parsers/SLR.h"
 #include "grammers/CFG.h"
-#include "visualization/ParseTree.h"
+#include "visualization/HTTPTreeBuilder.h"
 #include "visualization/DotGenerator.h"
 
 using namespace std;
@@ -24,33 +24,12 @@ string readFile(const string& filename) {
     return buffer.str();
 }
 
-// Helper: Convert Token to grammar terminal name
-string tokenToTerminal(const Token& token) {
-    switch (token.base) {
-        case BaseToken::SP:     return "SP";
-        case BaseToken::CRLF:   return "CRLF";
-        case BaseToken::COLON:  return "COLON";
-        case BaseToken::SLASH:  return "SLASH";
-        case BaseToken::DOT:    return "DOT";
-        case BaseToken::END_OF_INPUT: return "$";
-        case BaseToken::IDENT:
-            // Map to grammar terminal names (must match http10.json!)
-            if (token.lexeme == "GET")  return "METHOD_GET";
-            if (token.lexeme == "POST") return "METHOD_POST";
-            if (token.lexeme == "HEAD") return "METHOD_HEAD";
-            if (token.lexeme == "HTTP/1.0") return "HTTP_VERSION_1_0";
-            return "IDENT";
-        default:
-            return "UNKNOWN";
-    }
-}
-
 // Helper: Print tokens nicely
 void printTokens(const vector<Token>& tokens) {
     cout << "\n=== TOKENS ===" << endl;
     cout << "Found " << tokens.size() << " tokens:" << endl;
     for (size_t i = 0; i < tokens.size(); i++) {
-        string terminal = tokenToTerminal(tokens[i]);
+        string terminal = HTTPTreeBuilder::tokenToTerminal(tokens[i]);
         cout << "  [" << i << "] " << terminal;
         if (tokens[i].lexeme != terminal && tokens[i].lexeme != " " && tokens[i].lexeme != "\\r\\n") {
             cout << " (\"" << tokens[i].lexeme << "\")";
@@ -94,7 +73,7 @@ int main(int argc, char* argv[]) {
     vector<string> terminalSequence;
     for (const auto& token : tokens) {
         if (token.base == BaseToken::END_OF_INPUT) continue;  // Parser adds <EOS> itself
-        terminalSequence.push_back(tokenToTerminal(token));
+        terminalSequence.push_back(HTTPTreeBuilder::tokenToTerminal(token));
     }
 
     // ========== STEP 3: Parse ==========
@@ -116,11 +95,18 @@ int main(int argc, char* argv[]) {
     if (parseResult) {
         cout << "✓ SYNTAX VALID: The HTTP request is syntactically correct!" << endl;
         
-        // TODO: Add semantic checks here when HTTP10_semantics is implemented
-        // cout << "\n--- Step 5: Semantic Analysis ---" << endl;
+        // ========== STEP 5: Visualization ==========
+        cout << "\n--- Step 5: Generating Parse Tree Visualization ---" << endl;
         
-        cout << "\n[Visualization would be generated here when parser produces ParseTree]" << endl;
-        cout << "For now, run ./build/test_visualization to see visualization demo." << endl;
+        // Build parse tree from tokens
+        ParseTree tree = HTTPTreeBuilder::build(tokens);
+        
+        // Generate PNG image
+        string outputPath = "visualization/output/parse_tree.png";
+        DotGenerator::generateImage(tree, outputPath);
+        
+        cout << "\nTo view the parse tree, run:" << endl;
+        cout << "  open " << outputPath << endl;
         
     } else {
         cout << "✗ SYNTAX ERROR: The HTTP request has syntax errors." << endl;
