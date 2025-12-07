@@ -1,0 +1,72 @@
+{
+  "Variables": [
+    "Request",
+    "RequestLine",
+    "Method",
+    "URI",
+    "Path",
+    "PathTail",
+    "Segment",
+    "SegmentTail",
+    "Version",
+    "Headers",
+    "Header",
+    "HeaderName",
+    "HeaderValue",
+    "ValueTail",
+    "ValueToken"
+  ],
+
+  "Terminals": [
+    "METHOD_GET",
+    "METHOD_POST",
+    "METHOD_HEAD",
+    "SLASH",
+    "DOT",
+    "IDENT",
+    "SP",
+    "COLON",
+    "HTTP_VERSION_1_0",
+    "CRLF"
+  ],
+
+  "Start": "Request",
+
+  "Productions": [
+    { "head": "Request",       "body": ["RequestLine", "Headers", "CRLF"] },
+
+    { "head": "RequestLine",   "body": ["Method", "SP", "URI", "SP", "Version", "CRLF"] },
+
+    { "head": "Method",        "body": ["METHOD_GET"] },
+    { "head": "Method",        "body": ["METHOD_POST"] },
+    { "head": "Method",        "body": ["METHOD_HEAD"] },
+
+    { "head": "URI",           "body": ["SLASH", "Path"] },
+
+    { "head": "Path",          "body": ["Segment", "PathTail"] },
+
+    { "head": "PathTail",      "body": ["SLASH", "Path"] },
+    { "head": "PathTail",      "body": [] },
+
+    { "head": "Segment",       "body": ["IDENT", "SegmentTail"] },
+
+    { "head": "SegmentTail",   "body": ["DOT", "IDENT", "SegmentTail"] },
+    { "head": "SegmentTail",   "body": [] },
+
+    { "head": "Version",       "body": ["HTTP_VERSION_1_0"] },
+
+    { "head": "Headers",       "body": ["Header", "Headers"] },
+    { "head": "Headers",       "body": [] },
+
+    { "head": "Header",        "body": ["HeaderName", "COLON", "HeaderValue", "CRLF"] },
+
+    { "head": "HeaderName",    "body": ["IDENT"] },
+
+    { "head": "HeaderValue",   "body": ["ValueToken", "ValueTail"] },
+
+    { "head": "ValueTail",     "body": ["SP", "ValueToken", "ValueTail"] },
+    { "head": "ValueTail",     "body": [] },
+
+    { "head": "ValueToken",    "body": ["IDENT"] }
+  ]
+}
