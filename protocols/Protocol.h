@@ -16,6 +16,7 @@ public:
     virtual ~Protocol() = default;
     virtual std::vector<Token> tokenize(const std::string& input) = 0;
     virtual CFG getCFG() = 0;
+    virtual SemanticResult validateSemantics(const std::vector<Token>& tokens) = 0;
 };
 
 

@@ -1,20 +1,23 @@
-//
-// Created by Skip on 01/12/2025.
-//
-
 #ifndef SEMANTICRESULT_H
 #define SEMANTICRESULT_H
-#include <iostream>
+
+#include <string>
 
 struct SemanticResult {
     bool ok;
     std::string message;
+    std::string code;  // semantic error code, e.g. "empty-header-value"
 
-    static SemanticResult OK() { return {true, ""}; }
-    static SemanticResult Error(const std::string& msg) {
-        return {false, msg};
+    operator bool() const { return ok; }
+
+    static SemanticResult success() {
+        return {true, "", ""};
+    }
+
+    static SemanticResult failure(const std::string& msg,
+                                  const std::string& code = "") {
+        return {false, msg, code};
     }
 };
 
-#endif //SEMANTICRESULT_H
-
+#endif

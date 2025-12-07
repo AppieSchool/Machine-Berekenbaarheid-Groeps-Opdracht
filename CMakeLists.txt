@@ -15,6 +15,8 @@ add_executable(Machine-Berekenbaarheid-Groeps-Opdracht
         grammers/CFG_CYK.cpp
         visualization/DotGenerator.cpp
         visualization/HTTPTreeBuilder.cpp
+        protocols/HTTP10/HTTP10_semantics.cpp
+        protocols/HTTP10/HTTPrequest.cpp
 )
 
 

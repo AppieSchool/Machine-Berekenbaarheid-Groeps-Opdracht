@@ -40,6 +40,12 @@ public:
 
     void setStartSymbol(const std::string &startSym);
 
+    void printLL1Diagnostics(int state, const std::string& lookahead);
+
+    void printExpectedTerminals(const std::vector<std::string>& expected, const std::string& got);
+
+    std::vector<std::string> expectedFromLL1(const std::string& nonterminal);
+
     [[nodiscard]] const std::vector<production> &getProductions() const;
 
     [[nodiscard]] const std::vector<std::string> &getVariables() const;

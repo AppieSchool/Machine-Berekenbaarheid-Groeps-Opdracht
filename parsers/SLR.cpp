@@ -204,6 +204,24 @@ std::set<Item> SLR::goto_state(const std::set<Item> &I, const std::string &symbo
     return closure(J);
 }
 
+std::vector<std::string> SLR::expectedTerminals(int state)
+{
+    std::vector<std::string> result;
+
+    for (auto& entry : ACTION)
+    {
+        int st = entry.first.first;
+        const std::string& sym = entry.first.second;
+
+        if (st == state && sym != "<EOS>")
+        {
+            if (entry.second[0] == 's' || entry.second[0] == 'r')
+                result.push_back(sym);
+        }
+    }
+    return result;
+}
+
 bool SLR::parse(const std::vector<std::string> &tokens)
 {
     // Stack contains state numbers
@@ -225,10 +243,13 @@ bool SLR::parse(const std::vector<std::string> &tokens)
 
         // Error: no ACTION entry
         if (action_it == ACTION.end()) {
-            std::cout << "Parse error: no ACTION["
-                      << state << ", " << a << "]\n";
+            std::cout << "Parse error at token '" << a << "'\n";
+            auto expected = expectedTerminals(state);
+            cfg_ref.printExpectedTerminals(expected, a);
             return false;
         }
+
+
 
         std::string action = action_it->second;
 

@@ -71,6 +71,97 @@ void CFG::readJsonObject(json &jsonObj) {
 
 }
 
+std::vector<std::string> CFG::expectedFromLL1(const std::string& nonterminal)
+{
+    std::vector<std::string> result;
+
+    json ll1 = buildLL1Table();
+    json row = ll1[nonterminal];
+
+    for (auto it = row.begin(); it != row.end(); ++it) {
+        std::string terminal = it.key();
+        auto rhs = it.value();
+
+        // If NOT an error cell, this terminal is valid next.
+        if (!(rhs.size() == 1 && rhs[0] == "<ERR>")) {
+            result.push_back(terminal);
+        }
+    }
+    return result;
+}
+
+void CFG::printLL1Diagnostics(int state, const std::string& lookahead)
+{
+    std::cout << "\n--- Diagnostic (LL(1) Analysis) ---\n";
+
+    // Show FIRST/FOLLOW sets
+    json result;
+    json firstJson;
+    json followJson;
+
+    for (const auto& var : variables) {
+        firstJson[var] = firstSet(var);
+        followJson[var] = followSet(var);
+    }
+
+    result["first"] = firstJson;
+    result["follow"] = followJson;
+    result["ll1_table"] = buildLL1Table();
+
+    std::cout << result.dump(4) << "\n";
+
+    std::cout << "\nLikely expected symbols:\n";
+
+    // Show expected terminals for all nonterminals
+    for (const auto& var : variables) {
+        auto expected = expectedFromLL1(var);
+        if (!expected.empty()) {
+            std::cout << "  " << var << ": ";
+            for (auto& e : expected) std::cout << e << " ";
+            std::cout << "\n";
+        }
+    }
+
+    std::cout << "\nLookahead encountered: " << lookahead << "\n";
+}
+void CFG::printExpectedTerminals(
+        const std::vector<std::string>& expected,
+        const std::string& got)
+{
+    std::cout << "\nExpected one of:\n";
+    for (auto& e : expected)
+        std::cout << "  " << e << "\n";
+
+    std::cout << "\nBut got: " << got << "\n";
+
+    // ---- Semantic diagnostic rules ----
+
+    // Rule 1: "SP" expected alone → header value missing
+    if (expected.size() == 1 && expected[0] == "SP") {
+        std::cout << "\nInterpretation:\n";
+        std::cout << "  The parser expected a space after ':'\n";
+        std::cout << "  because header values in HTTP/1.0 cannot be empty.\n";
+
+        std::cout << "\nLikely error:\n";
+        std::cout << "  Missing header value after 'User-Agent:'.\n";
+
+        std::cout << "\nCorrect examples:\n";
+        std::cout << "  User-Agent: Test\n";
+        std::cout << "  User-Agent: MyBrowser/1.0\n\n";
+        return;
+    }
+
+    // Rule 2: IDENT missing → header value must start with a token
+    if (std::find(expected.begin(), expected.end(), "IDENT") != expected.end()
+        && got == "<EOS>")
+    {
+        std::cout << "\nInterpretation:\n";
+        std::cout << "  This header requires a value, but none was provided.\n";
+        return;
+    }
+}
+
+
 void CFG::print() {
     std::sort(variables.begin(), variables.end());
     std::sort(terminals.begin(), terminals.end());

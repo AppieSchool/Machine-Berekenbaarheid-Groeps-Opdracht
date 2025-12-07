@@ -50,6 +50,7 @@ public:
 private:
     std::set<Item> closure(const std::set<Item>& I);
     std::set<Item> goto_state(const std::set<Item>& I, const std::string &symbol);
+    std::vector<std::string> expectedTerminals(int value);
 
     // Build complete SLR parsing tables
     void build();
