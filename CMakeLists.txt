@@ -13,6 +13,7 @@ add_executable(Machine-Berekenbaarheid-Groeps-Opdracht
         protocols/HTTP10/HTTP10Protocol.cpp
         protocols/HTTP10/HTTP10Tokenizer.cpp
         grammers/CFG_CYK.cpp
+        visualization/DotGenerator.cpp
 )
 
 
@@ -21,6 +22,7 @@ target_include_directories(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE
         protocols/HTTP10
         utils
         parsers
+        visualization
 )
 
 add_executable(test_http10
