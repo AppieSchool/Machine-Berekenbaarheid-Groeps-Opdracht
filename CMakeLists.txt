@@ -44,3 +44,15 @@ target_include_directories(test_http10 PRIVATE
 configure_file(protocols/HTTP10/http10.json
         protocols/HTTP10/http10.json COPYONLY)
 
+# -------------------------------
+# Visualization test (for debugging/testing parse trees)
+# -------------------------------
+add_executable(test_visualization
+        visualization/test_visualization.cpp
+        visualization/DotGenerator.cpp
+)
+
+target_include_directories(test_visualization PRIVATE
+        visualization
+)
+

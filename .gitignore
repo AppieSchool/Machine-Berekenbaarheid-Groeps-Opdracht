@@ -1,0 +1,39 @@
+# Build directories
+build/
+cmake-build-*/
+
+# Compiled executables
+*.o
+*.out
+*.exe
+test_viz
+test_visualization
+test_http10
+Machine-Berekenbaarheid-Groeps-Opdracht
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Generated visualization output (kept separate from code)
+visualization/output/
+
+# Generated files (catch any stray ones)
+*.dot
+*.png
+*.svg
+*.pdf
+
+# Temporary files
+*.tmp
+*.log
