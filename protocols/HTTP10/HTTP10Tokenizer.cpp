@@ -19,10 +19,16 @@ std::vector<Token> HTTP10Tokenizer::tokenize(const std::string& input) {
     while (pos < input.size()) {
         char c = input[pos];
 
-        // ----- CRLF -----
+        // ----- CRLF (proper HTTP) or just LF (for testing) -----
         if (match(input, "\r\n")) {
             tokens.emplace_back(BaseToken::CRLF, "\\r\\n", pos);
             pos += 2;
+            continue;
+        }
+        // Also accept just \n (common in test files on macOS/Linux)
+        if (c == '\n') {
+            tokens.emplace_back(BaseToken::CRLF, "\\n", pos);
+            pos++;
             continue;
         }
 
