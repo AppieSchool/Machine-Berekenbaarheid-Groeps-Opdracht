@@ -32,8 +32,7 @@
   "Productions": [
     { "head": "Request", "body": ["RequestLine", "Headers", "CRLF"] },
 
-    {
-      "head": "RequestLine",
+    { "head": "RequestLine",
       "body": ["Method", "SP", "URI", "SP", "Version", "CRLF"]
     },
 
@@ -52,8 +51,7 @@
     { "head": "Headers", "body": ["Header", "Headers"] },
     { "head": "Headers", "body": [] },
 
-    {
-      "head": "Header",
+    { "head": "Header",
       "body": ["HeaderName", "COLON", "SP", "HeaderValue", "CRLF"]
     },
 
@@ -63,6 +61,9 @@
 
     { "head": "ValueTail", "body": ["SP", "ValueToken", "ValueTail"] },
     { "head": "ValueTail", "body": ["SLASH", "ValueToken", "ValueTail"] },
+
+    { "head": "ValueTail", "body": ["DOT", "ValueToken", "ValueTail"] },
+
     { "head": "ValueTail", "body": [] },
 
     { "head": "ValueToken", "body": ["IDENT"] }

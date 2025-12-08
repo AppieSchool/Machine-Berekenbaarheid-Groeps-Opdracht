@@ -242,12 +242,45 @@ bool SLR::parse(const std::vector<std::string> &tokens)
         auto action_it = ACTION.find({state, a});
 
         // Error: no ACTION entry
-        if (action_it == ACTION.end()) {
-            std::cout << "Parse error at token '" << a << "'\n";
+        if (action_it == ACTION.end())
+        {
+            // expected terminals for this parser state
             auto expected = expectedTerminals(state);
+
+            // Build detailed diagnostic for GUI and logs
+            auto diag = cfg_ref.buildDiagnostic(expected, a);
+            lastDiagnostic = diag;
+
+            //
+            // ======= DEBUG OUTPUT =======
+            //
+            std::cout << "\n========================================\n";
+            std::cout << "           PARSE ERROR DEBUG            \n";
+            std::cout << "========================================\n";
+            std::cout << "Current parser state: " << state << "\n";
+            std::cout << "Current token: '" << a << "'\n";
+
+            std::cout << "\nExpected terminals:\n";
+            for (auto& e : expected)
+                std::cout << "  - " << e << "\n";
+
+            std::cout << "\nStack contents (states): ";
+            for (auto s : stack)
+                std::cout << s << " ";
+            std::cout << "\n";
+
+            std::cout << "\nRemaining input sequence:\n";
+            for (int i = ip; i < input.size(); i++)
+                std::cout << input[i] << " ";
+            std::cout << "\n========================================\n\n";
+
+            // OLD terminal printing (optional debugging)
+            std::cout << "Parse error at token '" << a << "'\n";
             cfg_ref.printExpectedTerminals(expected, a);
+
             return false;
         }
+
 
 
 

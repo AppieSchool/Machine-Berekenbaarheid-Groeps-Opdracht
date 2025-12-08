@@ -8,15 +8,17 @@
 #include <string>
 
 enum class BaseToken {
-    SP,             // space
-    CRLF,           // \r\n
-    COLON,          // :
-    SLASH,          // /
-    DOT,            // .
-    IDENT,          // generic identifier (header name, path segment, etc.)
-    END_OF_INPUT,   // EOF marker
-    ERROR           // tokenizer failure
+    SP,                 // space
+    CRLF,               // \r\n
+    COLON,              // :
+    SLASH,              // /
+    DOT,                // .
+    IDENT,              // generic identifier
+
+    END_OF_INPUT,       // EOF marker
+    ERROR               // tokenizer failure
 };
+
 
 class Token {
 public:

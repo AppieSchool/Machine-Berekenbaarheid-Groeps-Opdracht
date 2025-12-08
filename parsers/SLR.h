@@ -38,6 +38,7 @@ using State = std::vector<Item>;
 class SLR {
 public:
     explicit SLR(CFG &cfg);
+    DiagnosticInfo lastDiagnostic;
 
     // parse a token sequence
     [[nodiscard]] bool parse(const std::vector<std::string> &tokens);

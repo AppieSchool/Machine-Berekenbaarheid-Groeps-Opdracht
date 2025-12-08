@@ -1,124 +1,82 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
+// main_gui.cpp
 
-#include "protocols/HTTP10/HTTP10Protocol.h"
-#include "protocols/HTTP10/HTTP10Tokenizer.h"
-#include "parsers/SLR.h"
-#include "grammers/CFG.h"
-#include "visualization/HTTPTreeBuilder.h"
-#include "visualization/DotGenerator.h"
+#include <GLFW/include/glfw3.h>
 
-using namespace std;
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
-// Helper: Read entire file into string
-string readFile(const string& filename) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Error: Could not open file: " << filename << endl;
-        return "";
-    }
-    stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
+#include "gui/ProtocolGui.h"
+#include "protocols/HTTP10/HTTP10MessageGenerator.h"
+#include "utils/imgui/ImGuiTheme.h"
 
-// Helper: Print tokens nicely
-void printTokens(const vector<Token>& tokens) {
-    cout << "\n=== TOKENS ===" << endl;
-    cout << "Found " << tokens.size() << " tokens:" << endl;
-    for (size_t i = 0; i < tokens.size(); i++) {
-        string terminal = HTTPTreeBuilder::tokenToTerminal(tokens[i]);
-        cout << "  [" << i << "] " << terminal;
-        if (tokens[i].lexeme != terminal &&
-            tokens[i].lexeme != " " &&
-            tokens[i].lexeme != "\\r\\n")
-        {
-            cout << " (\"" << tokens[i].lexeme << "\")";
-        }
-        cout << endl;
-    }
-}
+int main()
+{
+    // Init GLFW FIRST
+    if (!glfwInit())
+        return -1;
 
-int main(int argc, char* argv[]) {
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
-    cout << "========================================" << endl;
-    cout << "   HTTP/1.0 Request Validator" << endl;
-    cout << "========================================" << endl;
-
-    // Determine input file
-    string filename;
-    if (argc > 1) {
-        filename = argv[1];
-    } else {
-        filename = "protocols/HTTP10/cases/valid_request_2.txt";
-        cout << "\nNo file specified, using default: " << filename << endl;
+    GLFWwindow* window = glfwCreateWindow(1200, 800, "Protocol Playground", nullptr, nullptr);
+    if (!window) {
+        glfwTerminate();
+        return -1;
     }
 
-    // STEP 1: Read input
-    cout << "\n--- Step 1: Reading input ---" << endl;
-    string input = readFile(filename);
-    if (input.empty()) return 1;
-    cout << "Input (" << input.size() << " bytes):\n--------------------\n"
-         << input << "\n--------------------\n";
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
 
-    // STEP 2: Tokenize
-    cout << "\n--- Step 2: Tokenizing ---" << endl;
-    HTTP10Tokenizer tokenizer;
-    vector<Token> tokens = tokenizer.tokenize(input);
-    printTokens(tokens);
+    // -----------------------------------
+    // INIT IMGUI (only once!)
+    // -----------------------------------
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ApplyCustomDarkTheme();        // <<< apply theme AFTER context creation
+    // (Remove ImGui::StyleColorsDark(); you don't want default theme)
 
-    // Convert tokens → parser symbols
-    vector<string> terminalSequence;
-    for (const auto& token : tokens) {
-        if (token.base == BaseToken::END_OF_INPUT) continue;
-        terminalSequence.push_back(HTTPTreeBuilder::tokenToTerminal(token));
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
+    // -----------------------------------
+    // GUI state
+    // -----------------------------------
+    ProtocolGuiState state;
+
+    // -----------------------------------
+    // MAIN LOOP
+    // -----------------------------------
+    while (!glfwWindowShouldClose(window))
+    {
+        glfwPollEvents();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        DrawProtocolGui(state);
+
+        ImGui::Render();
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+
+        glViewport(0, 0, display_w, display_h);
+        glClearColor(0.1f, 0.1f, 0.12f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(window);
     }
 
-    // STEP 3: Parse (SLR)
-    cout << "\n--- Step 3: Parsing (SLR) ---" << endl;
+    // -----------------------------------
+    // CLEANUP
+    // -----------------------------------
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
-    HTTP10Protocol protocol;
-    CFG grammar = protocol.getCFG();
-    cout << "Loaded grammar from http10.json" << endl;
-
-    SLR parser(grammar);
-    cout << "Parsing token sequence..." << endl;
-    bool parseResult = parser.parse(terminalSequence);
-
-    cout << "\n--- Step 4: Syntax Results ---" << endl;
-    if (!parseResult) {
-        cout << "✗ SYNTAX ERROR: The HTTP request has syntax errors." << endl;
-        cout << "Check the parser output above for details." << endl;
-        cout << "\n========================================\nPipeline Complete\n========================================\n";
-        return 1;
-    }
-
-    cout << "✓ SYNTAX VALID: The HTTP request is syntactically correct!" << endl;
-
-    // STEP 5: Semantic validation (NEW)
-    cout << "\n--- Step 5: Semantic Validation ---" << endl;
-    SemanticResult sem = protocol.validateSemantics(tokens);
-
-    if (!sem.ok) {
-        cout << "✗ SEMANTIC ERROR: " << sem.message << endl;
-        if (!sem.code.empty()) cout << "Error code: " << sem.code << endl;
-        cout << "\n========================================\nPipeline Complete\n========================================\n";
-        return 1;
-    }
-
-    cout << "✓ SEMANTICS VALID: The request meaning is valid!" << endl;
-
-    // STEP 6: Parse tree visualization (only if syntax + semantics OK)
-    cout << "\n--- Step 6: Generating Parse Tree Visualization ---" << endl;
-
-    ParseTree tree = HTTPTreeBuilder::build(tokens);
-    string outputPath = "visualization/output/parse_tree.png";
-    DotGenerator::generateImage(tree, outputPath);
-
-    cout << "\nTo view the parse tree, run:\n  open " << outputPath << endl;
-
-    cout << "\n========================================\nPipeline Complete\n========================================" << endl;
     return 0;
 }

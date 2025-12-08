@@ -24,6 +24,15 @@ public:
 };
 
 
+struct DiagnosticInfo {
+    std::string title;
+    std::string message;
+    std::vector<std::string> expected;
+    std::string got;
+    std::string interpretation;
+    std::string likelyError;
+    std::vector<std::string> examples;
+};
 
 class CFG {
 public:
@@ -58,6 +67,9 @@ public:
 
     std::vector<std::string> followSet(const std::string& symbol);
 
+    DiagnosticInfo buildDiagnostic(
+        const std::vector<std::string>& expected,
+        const std::string& got);
     explicit CFG(std::string jsonFile);
     CFG(json &jsonObj);
     CFG() = default;

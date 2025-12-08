@@ -7,6 +7,11 @@
 #include <utility>
 
 
+DiagnosticInfo buildDiagnostic(
+        const std::vector<std::string>& expected,
+        const std::string& got);
+
+
 production::production(std::string lhs, std::vector<std::string> body)
         : lhs(std::move(lhs)), body(std::move(body)) {}
 
@@ -69,6 +74,52 @@ void CFG::readJsonObject(json &jsonObj) {
     startSymbol = startJson;
 
 
+}
+
+DiagnosticInfo CFG::buildDiagnostic(
+        const std::vector<std::string>& expected,
+        const std::string& got)
+{
+    DiagnosticInfo d;
+    d.title = "Syntax Error";
+    d.expected = expected;
+    d.got = got;
+
+    // Standard description
+    d.message = "Unexpected token '" + got + "'.";
+
+    // Rule 1: expected only SP → missing header value
+    if (expected.size() == 1 && expected[0] == "SP") {
+        d.interpretation =
+                "The parser expected a space after ':', because header values "
+                "in HTTP/1.0 cannot be empty.";
+
+        d.likelyError = "Missing header value after 'User-Agent:'.";
+
+        d.examples = {
+            "User-Agent: Test",
+            "User-Agent: MyBrowser/1.0"
+    };
+
+        return d;
+    }
+
+    // Rule 2: expected IDENT but got <EOS> → missing header value entirely
+    if (std::find(expected.begin(), expected.end(), "IDENT") != expected.end()
+        && got == "<EOS>")
+    {
+        d.interpretation =
+                "This header requires a value, but none was provided.";
+
+        d.likelyError =
+                "The header was terminated prematurely without a value.";
+
+        return d;
+    }
+
+    // Default fallback
+    d.interpretation = "The token does not match any valid continuation.";
+    return d;
 }
 
 std::vector<std::string> CFG::expectedFromLL1(const std::string& nonterminal)
