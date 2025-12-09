@@ -76,26 +76,41 @@ configure_file(protocols/HTTP10/http10.json
         protocols/HTTP10/http10.json COPYONLY)
 
 # ----------------------------------------------------
-# GLFW integration
+# GLFW integration (platform-specific)
 # ----------------------------------------------------
-# Adjust if your directory names differ
-set(GLFW_INCLUDE_DIR utils/GLFW/include)
-set(GLFW_LIBRARY_DIR utils/GLFW/lib)
-
-target_include_directories(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE ${GLFW_INCLUDE_DIR})
-target_link_directories(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE ${GLFW_LIBRARY_DIR})
-
-# Link against dll import lib: libglfw3dll.a  --> glfw3dll
-target_link_libraries(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE
-        imgui
-        glfw3dll
-        opengl32
-        gdi32
-        user32
-        shell32
-)
-
-# If you need GLFW also in the test executable, add:
-# target_include_directories(test_http10 PRIVATE ${GLFW_INCLUDE_DIR})
-# target_link_directories(test_http10 PRIVATE ${GLFW_LIBRARY_DIR})
-# target_link_libraries(test_http10 PRIVATE glfw3dll opengl32 gdi32 user32 shell32)
+if(APPLE)
+    # macOS: Use Homebrew GLFW
+    find_package(glfw3 REQUIRED)
+    target_link_libraries(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE
+            imgui
+            glfw
+            "-framework OpenGL"
+            "-framework Cocoa"
+            "-framework IOKit"
+            "-framework CoreVideo"
+    )
+    target_include_directories(imgui PUBLIC /opt/homebrew/include)
+elseif(WIN32)
+    # Windows: Use bundled GLFW
+    set(GLFW_INCLUDE_DIR utils/GLFW/include)
+    set(GLFW_LIBRARY_DIR utils/GLFW/lib)
+    target_include_directories(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE ${GLFW_INCLUDE_DIR})
+    target_link_directories(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE ${GLFW_LIBRARY_DIR})
+    target_link_libraries(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE
+            imgui
+            glfw3dll
+            opengl32
+            gdi32
+            user32
+            shell32
+    )
+else()
+    # Linux: Use system GLFW
+    find_package(glfw3 REQUIRED)
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE
+            imgui
+            glfw
+            OpenGL::GL
+    )
+endif()
