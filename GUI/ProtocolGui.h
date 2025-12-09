@@ -18,6 +18,8 @@ enum class ProtocolKind {
 // --------------------------
 struct ProtocolGuiState {
     ProtocolGuiState();
+    ~ProtocolGuiState();  // To clean up texture
+    
     ProtocolKind selectedProtocol = ProtocolKind::HTTP10;
 
     // NEW: generator configuration
@@ -30,6 +32,12 @@ struct ProtocolGuiState {
     double fakeCheckDuration = 0.3;
 
     ProtocolCheckResult lastResult;
+    
+    // Parse tree image display
+    unsigned int parseTreeTexture = 0;
+    int parseTreeWidth = 0;
+    int parseTreeHeight = 0;
+    std::string loadedImagePath;  // Track which image is loaded
 };
 // --------------------------
 // Main function to render ALL GUI panels

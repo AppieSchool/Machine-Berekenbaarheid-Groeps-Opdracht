@@ -19,6 +19,7 @@ add_executable(Machine-Berekenbaarheid-Groeps-Opdracht
         protocols/HTTP10/HTTPrequest.cpp
         GUI/HTTP10Checker.cpp
         GUI/ProtocolGui.cpp
+        GUI/ImageLoader.cpp
         protocols/HTTP10/HTTP10MessageGenerator.cpp
         GUI/panels/Panel_Generator.cpp
         GUI/panels/Panel_InputEditor.cpp

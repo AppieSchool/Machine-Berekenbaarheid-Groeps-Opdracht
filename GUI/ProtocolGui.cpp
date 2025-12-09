@@ -1,5 +1,6 @@
 #pragma once
 #include "ProtocolGui.h"
+#include "ImageLoader.h"
 
 #include "panels/Panel_ProtocolSelector.h"
 #include "panels/Panel_Generator.h"
@@ -46,4 +47,10 @@ ProtocolGuiState::ProtocolGuiState() {
         {"Accept", "text/html", false, false},
         {"Connection", "keep-alive", false, false}
     };
+}
+
+ProtocolGuiState::~ProtocolGuiState() {
+    if (parseTreeTexture != 0) {
+        FreeTexture(parseTreeTexture);
+    }
 }

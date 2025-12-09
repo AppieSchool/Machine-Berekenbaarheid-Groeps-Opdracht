@@ -110,12 +110,57 @@ void DrawResultsPanel(ProtocolGuiState& state)
         ImGui::TextWrapped("%s", r.semanticsMessage.c_str());
 
     //
-    // Parse tree path
+    // Parse tree image
     //
     if (r.hasParseTree) {
         ImGui::Spacing();
-        ImGui::Text("Parse tree:");
-        ImGui::TextDisabled("%s", r.parseTreePath.c_str());
+        ImGui::Separator();
+        
+        if (ImGui::CollapsingHeader("Parse Tree", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Load the image if not already loaded or if path changed
+            if (state.loadedImagePath != r.parseTreePath) {
+                // Free old texture if exists
+                if (state.parseTreeTexture != 0) {
+                    FreeTexture(state.parseTreeTexture);
+                    state.parseTreeTexture = 0;
+                }
+                
+                // Load new texture
+                state.parseTreeTexture = LoadTextureFromFile(
+                    r.parseTreePath.c_str(),
+                    &state.parseTreeWidth,
+                    &state.parseTreeHeight
+                );
+                state.loadedImagePath = r.parseTreePath;
+            }
+            
+            if (state.parseTreeTexture != 0) {
+                // Calculate display size (fit to width, max 600px)
+                float maxWidth = ImGui::GetContentRegionAvail().x - 20;
+                float scale = 1.0f;
+                if (state.parseTreeWidth > maxWidth) {
+                    scale = maxWidth / state.parseTreeWidth;
+                }
+                
+                ImVec2 displaySize(
+                    state.parseTreeWidth * scale,
+                    state.parseTreeHeight * scale
+                );
+                
+                // Display the image
+                ImGui::Image(
+                    (ImTextureID)(intptr_t)state.parseTreeTexture,
+                    displaySize
+                );
+                
+                ImGui::TextDisabled("Path: %s", r.parseTreePath.c_str());
+                ImGui::TextDisabled("Size: %dx%d", state.parseTreeWidth, state.parseTreeHeight);
+            } else {
+                ImGui::TextColored(ImVec4(0.9f, 0.5f, 0.2f, 1.0f), 
+                    "Could not load parse tree image");
+                ImGui::TextDisabled("Path: %s", r.parseTreePath.c_str());
+            }
+        }
     }
 
     //

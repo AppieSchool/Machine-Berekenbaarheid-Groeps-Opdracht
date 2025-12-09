@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <filesystem>
 
 #include "../protocols/HTTP10/HTTP10Protocol.h"
 #include "../protocols/HTTP10/HTTP10Tokenizer.h"
@@ -9,6 +10,8 @@
 #include "../grammers/CFG.h"
 #include "../visualization/HTTPTreeBuilder.h"
 #include "../visualization/DotGenerator.h"
+
+using namespace std;
 
 bool runHTTP10Check(const std::string& input, ProtocolCheckResult& out)
 {
@@ -139,7 +142,11 @@ bool runHTTP10Check(const std::string& input, ProtocolCheckResult& out)
     log << "\n--- Step 6: Generating Parse Tree Visualization ---\n";
     auto tree = HTTPTreeBuilder::build(tokens);
 
-    std::string output = "visualization/output/parse_tree_gui.png";
+    // Create output directory if it doesn't exist, use absolute path
+    filesystem::path outputDir = filesystem::current_path() / "visualization" / "output";
+    filesystem::create_directories(outputDir);
+    
+    string output = (outputDir / "parse_tree_gui.png").string();
     DotGenerator::generateImage(tree, output);
 
     out.hasParseTree = true;
