@@ -115,7 +115,7 @@ Via de *Request-Line Settings* en *Headers* kan het bericht verder aangepast wor
 
 Na het aanpassen van de instellingen wordt het bericht gegenereerd via **Generate Message**.
 
-![Message generator](images/message_generator.png)
+![message_generator.png](images/message_generator.png)
 
 ---
 
@@ -141,6 +141,10 @@ Bij een geldig bericht verschijnt een duidelijke bevestiging:
 
 ![Validation success](images/validation_success.png)
 
+Bij een ongeldig bericht worden de fouten duidelijk gemarkeerd:
+
+![Validation error](images/validation_error.png)
+
 ---
 
 ### Validatie-resultaten (tabs)
@@ -154,7 +158,7 @@ De resultaten worden overzichtelijk getoond in verschillende tabs:
   Controleert of het bericht betekenisvol is volgens de protocolregels.
 
 - **Parse Tree**  
-  Toont de gegenereerde parseboom van het bericht (optioneel gevisualiseerd via Graphviz).
+  Toont de gegenereerde parseboom van het bericht (gevisualiseerd via Graphviz).
 
 - **Detailed Log**  
   Geeft een stap-voor-stap overzicht van de volledige analysepipeline.
