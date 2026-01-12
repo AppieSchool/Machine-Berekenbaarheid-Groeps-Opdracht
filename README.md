@@ -106,9 +106,9 @@ De architectuur is uitbreidbaar zodat later meerdere protocollen toegevoegd kunn
 
 ### Berichtgeneratie (Valid / Invalid)
 
-De gebruiker kan kiezen tussen:
-- **Valid**: genereert automatisch een grammaticaal correct protocolbericht
-- **Invalid**: forceert een fout om syntactische of semantische fouten te testen
+De gebruiker kan klikken op de knop Force invalid:
+- **zonder**: genereert automatisch een grammaticaal correct protocolbericht
+- **Force Invalid**: forceert een fout om syntactische of semantische fouten te testen
 
 Via de *Request-Line Settings* en *Headers* kan het bericht verder aangepast worden
 (bv. methode, pad, headers, waarden).
