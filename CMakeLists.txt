@@ -92,18 +92,28 @@ if(APPLE)
     )
     target_include_directories(imgui PUBLIC /opt/homebrew/include)
 elseif(WIN32)
-    # Windows: Use bundled GLFW
-    set(GLFW_INCLUDE_DIR utils/GLFW/include)
-    set(GLFW_LIBRARY_DIR utils/GLFW/lib)
-    target_include_directories(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE ${GLFW_INCLUDE_DIR})
+    set(GLFW_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/utils/GLFW/include)
+    set(GLFW_LIBRARY_DIR ${CMAKE_SOURCE_DIR}/utils/GLFW/lib)
+
+    # Zorg dat imgui_impl_glfw.cpp GLFW headers vindt
+    target_include_directories(imgui PUBLIC ${GLFW_INCLUDE_DIR})
+
     target_link_directories(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE ${GLFW_LIBRARY_DIR})
+
     target_link_libraries(Machine-Berekenbaarheid-Groeps-Opdracht PRIVATE
             imgui
-            glfw3dll
+            ${GLFW_LIBRARY_DIR}/libglfw3dll.a
             opengl32
             gdi32
             user32
             shell32
+    )
+
+    # Copy glfw3.dll next to exe
+    add_custom_command(TARGET Machine-Berekenbaarheid-Groeps-Opdracht POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${GLFW_LIBRARY_DIR}/glfw3.dll
+            $<TARGET_FILE_DIR:Machine-Berekenbaarheid-Groeps-Opdracht>
     )
 else()
     # Linux: Use system GLFW
