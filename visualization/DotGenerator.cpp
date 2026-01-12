@@ -60,6 +60,8 @@ void DotGenerator::generateImage(const ParseTree& root, const string& pngFilenam
         cout << "PNG image saved to: " << pngFilename << "\n";
     } else {
         cerr << "Error: Failed to generate PNG. Is Graphviz installed?\n";
-        cerr << "Install with: brew install graphviz\n";
+        cerr << "Install with Mac: brew install graphviz\n";
+        cerr << "Install with Ubuntu: sudo apt-get install graphviz\n";
+        cerr << "Install with Windows: https://graphviz.org/download// \n";
     }
 }
