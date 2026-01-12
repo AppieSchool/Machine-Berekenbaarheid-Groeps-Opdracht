@@ -17,9 +17,9 @@ Deze kunnen leiden tot:
 - of zelfs beveiligingsproblemen
 
 Het doel van dit project is een tool te bouwen die **automatisch verifieert** of een netwerkbericht:
-- grammaticaal correct is
-- semantisch geldig is
-- en eventueel ambigu is
+- grammaticaal correct
+- semantisch geldig
+- eventueel ambigu
 
 ---
 
