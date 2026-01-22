@@ -21,7 +21,7 @@ private:
     Token readCRLF(const std::string& input);
     Token readMethod(const std::string& input);
     Token readVersion(const std::string& input);
-    Token readIdentifier(const std::string& input);
+    Token readIdentifier(const std::string& input , int line, int col);
 };
 
 #endif

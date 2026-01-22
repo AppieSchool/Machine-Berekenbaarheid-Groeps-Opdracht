@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <filesystem>
+#include <algorithm> // max/min
 
 #include "../protocols/HTTP10/HTTP10Protocol.h"
 #include "../protocols/HTTP10/HTTP10Tokenizer.h"
@@ -29,9 +30,7 @@ bool runHTTP10Check(const std::string& input, ProtocolCheckResult& out)
         return false;
     }
 
-    //
     // --- TOKENIZATION ---
-    //
     log << "--- Step 2: Tokenizing ---\n";
     HTTP10Tokenizer tokenizer;
     auto tokens = tokenizer.tokenize(input);
@@ -52,17 +51,20 @@ bool runHTTP10Check(const std::string& input, ProtocolCheckResult& out)
     }
     log << "\n";
 
-    //
-    // Convert tokens → parser terminals
-    //
+    // --- Convert tokens → parser terminals + mapping to original token index ---
     std::vector<std::string> terminalSeq;
-    for (auto& t : tokens)
-        if (t.base != BaseToken::END_OF_INPUT)
-            terminalSeq.push_back(HTTPTreeBuilder::tokenToTerminal(t));
+    terminalSeq.reserve(tokens.size());
 
-    //
+    std::vector<int> termToTokIdx;          // <--- NEW
+    termToTokIdx.reserve(tokens.size());
+
+    for (int i = 0; i < (int)tokens.size(); ++i) {
+        if (tokens[i].base == BaseToken::END_OF_INPUT) continue;
+        terminalSeq.push_back(HTTPTreeBuilder::tokenToTerminal(tokens[i]));
+        termToTokIdx.push_back(i);          // <--- NEW: parser index -> tokens[i]
+    }
+
     // --- PARSING ---
-    //
     log << "--- Step 3: Parsing (SLR) ---\n";
     HTTP10Protocol protocol;
     CFG grammar = protocol.getCFG();
@@ -75,48 +77,82 @@ bool runHTTP10Check(const std::string& input, ProtocolCheckResult& out)
 
     log << "\n--- Step 4: Syntax Results ---\n";
 
+    // Helper: haal 1 specifieke lijn uit input (1-based)
+    auto getLineText = [&](int targetLine) -> std::string {
+        int line = 1;
+        size_t start = 0;
+        for (size_t i = 0; i <= input.size(); ++i) {
+            if (i == input.size() || input[i] == '\n') {
+                if (line == targetLine) {
+                    size_t end = i;
+                    if (end > start && input[end - 1] == '\r') end--; // strip \r
+                    return input.substr(start, end - start);
+                }
+                line++;
+                start = i + 1;
+            }
+        }
+        return "";
+    };
+
+    auto printCaret = [&](const std::string& lineText, int col1based) {
+        log << "  " << lineText << "\n";
+        log << "  ";
+        for (int i = 1; i < col1based; ++i) log << " ";
+        log << "^\n";
+    };
+
     if (!parseResult) {
-        //
-        // Retrieve structured diagnostic info
-        //
         auto& d = parser.lastDiagnostic;
 
         out.syntaxOk = false;
         out.syntaxMessage = d.message;
-        out.diagnostic = d;                   // STORE FOR GUI
+        out.diagnostic = d;
 
-        //
-        // Logging
-        //
+        // ---- TOP: Line/Column caret output ----
+        int err = parser.lastErrorIndex; // parser index
+
+        if (err >= 0 && err < (int)termToTokIdx.size()) {
+            int tokIndex = termToTokIdx[err];
+
+            // requires Token to have line/col (as you added)
+            int line = tokens[tokIndex].line; // 1-based
+            int col  = tokens[tokIndex].col;  // 1-based
+
+            std::string lineText = getLineText(line);
+
+            log << "ERROR at Line " << line << ", Column " << col << ":\n";
+            if (!lineText.empty()) {
+                printCaret(lineText, col);
+            } else {
+                log << "  (could not extract line text)\n";
+            }
+            log << "\n";
+        }
+
+        // ---- Minimal Syntax Diagnostic (NO interpretation/likely/examples) ----
+        log << "Syntax Diagnostic:\n";
         log << d.message << "\n";
         log << "Expected:\n";
         for (auto& e : d.expected) log << "  " << e << "\n";
+        log << "Got:\n  " << d.got << "\n";
 
-        log << "But got: " << d.got << "\n";
-
-        if (!d.interpretation.empty())
-            log << d.interpretation << "\n";
-
-        if (!d.likelyError.empty())
-            log << "Likely error: " << d.likelyError << "\n";
-
-        if (!d.examples.empty()) {
-            log << "Examples:\n";
-            for (auto& ex : d.examples)
-                log << "  " << ex << "\n";
+        // ---- Simple suggestion (optional) ----
+        if (!d.expected.empty()) {
+            log << "\nSuggestion: insert '" << d.expected[0]
+                << "' before '" << d.got << "'.\n";
         }
 
         out.logText = log.str();
         return false;
     }
 
+
+    // ... rest blijft identiek ...
     out.syntaxOk = true;
     out.syntaxMessage = "Syntax OK";
     log << "✓ SYNTAX VALID: The request is syntactically correct!\n";
 
-    //
-    // --- SEMANTICS ---
-    //
     log << "\n--- Step 5: Semantic Validation ---\n";
     auto sem = protocol.validateSemantics(tokens);
 
@@ -136,16 +172,12 @@ bool runHTTP10Check(const std::string& input, ProtocolCheckResult& out)
     out.semanticsMessage = "Semantics OK";
     log << "✓ SEMANTICS VALID: The request meaning is valid!\n";
 
-    //
-    // --- PARSE TREE ---
-    //
     log << "\n--- Step 6: Generating Parse Tree Visualization ---\n";
     auto tree = HTTPTreeBuilder::build(tokens);
 
-    // Create output directory if it doesn't exist, use absolute path
     filesystem::path outputDir = filesystem::current_path() / "visualization" / "output";
     filesystem::create_directories(outputDir);
-    
+
     string output = (outputDir / "parse_tree_gui.png").string();
     DotGenerator::generateImage(tree, output);
 
@@ -158,3 +190,4 @@ bool runHTTP10Check(const std::string& input, ProtocolCheckResult& out)
     out.logText = log.str();
     return true;
 }
+

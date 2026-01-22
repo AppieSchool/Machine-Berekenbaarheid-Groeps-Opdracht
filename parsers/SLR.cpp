@@ -278,6 +278,7 @@ bool SLR::parse(const std::vector<std::string> &tokens)
             std::cout << "Parse error at token '" << a << "'\n";
             cfg_ref.printExpectedTerminals(expected, a);
 
+            lastErrorIndex = ip;
             return false;
         }
 

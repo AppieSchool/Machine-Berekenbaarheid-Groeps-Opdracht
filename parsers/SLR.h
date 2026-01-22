@@ -37,6 +37,7 @@ using State = std::vector<Item>;
 
 class SLR {
 public:
+    int lastErrorIndex = -1;
     explicit SLR(CFG &cfg);
     DiagnosticInfo lastDiagnostic;
 
