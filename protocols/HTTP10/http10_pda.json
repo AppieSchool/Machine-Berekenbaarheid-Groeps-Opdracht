@@ -1,0 +1,86 @@
+{
+  "States": ["q"],
+  "Alphabet": [
+    "METHOD_GET", "METHOD_POST", "METHOD_HEAD",
+    "SLASH", "DOT", "IDENT", "SP", "COLON",
+    "HTTP_VERSION_1_0", "CRLF"
+  ],
+  "StackAlphabet": [
+    "Z0",
+
+    "Request", "RequestLine", "Method", "URI", "URITail", "Version",
+    "Headers", "Header", "HeaderName", "HeaderValue", "ValueTail", "ValueToken",
+
+    "METHOD_GET", "METHOD_POST", "METHOD_HEAD",
+    "SLASH", "DOT", "IDENT", "SP", "COLON",
+    "HTTP_VERSION_1_0", "CRLF"
+  ],
+  "StartState": "q",
+  "StartStack": "Z0",
+  "Transitions": [
+    { "from": "q", "input": "", "stacktop": "Z0", "to": "q", "replacement": ["Request", "Z0"] },
+
+    { "from": "q", "input": "", "stacktop": "Z0", "to": "q", "replacement": [] },
+
+    { "from": "q", "input": "METHOD_GET",        "stacktop": "METHOD_GET",        "to": "q", "replacement": [] },
+    { "from": "q", "input": "METHOD_POST",       "stacktop": "METHOD_POST",       "to": "q", "replacement": [] },
+    { "from": "q", "input": "METHOD_HEAD",       "stacktop": "METHOD_HEAD",       "to": "q", "replacement": [] },
+    { "from": "q", "input": "SLASH",             "stacktop": "SLASH",             "to": "q", "replacement": [] },
+    { "from": "q", "input": "DOT",               "stacktop": "DOT",               "to": "q", "replacement": [] },
+    { "from": "q", "input": "IDENT",             "stacktop": "IDENT",             "to": "q", "replacement": [] },
+    { "from": "q", "input": "SP",                "stacktop": "SP",                "to": "q", "replacement": [] },
+    { "from": "q", "input": "COLON",             "stacktop": "COLON",             "to": "q", "replacement": [] },
+    { "from": "q", "input": "HTTP_VERSION_1_0",  "stacktop": "HTTP_VERSION_1_0",  "to": "q", "replacement": [] },
+    { "from": "q", "input": "CRLF",              "stacktop": "CRLF",              "to": "q", "replacement": [] },
+
+
+    { "from": "q", "input": "", "stacktop": "Request", "to": "q",
+      "replacement": ["RequestLine", "Headers", "CRLF"] },
+
+    { "from": "q", "input": "", "stacktop": "RequestLine", "to": "q",
+      "replacement": ["Method", "SP", "URI", "SP", "Version", "CRLF"] },
+
+    { "from": "q", "input": "", "stacktop": "Method", "to": "q", "replacement": ["METHOD_GET"] },
+    { "from": "q", "input": "", "stacktop": "Method", "to": "q", "replacement": ["METHOD_POST"] },
+    { "from": "q", "input": "", "stacktop": "Method", "to": "q", "replacement": ["METHOD_HEAD"] },
+
+    { "from": "q", "input": "", "stacktop": "URI", "to": "q",
+      "replacement": ["SLASH", "IDENT", "URITail"] },
+
+    { "from": "q", "input": "", "stacktop": "URITail", "to": "q",
+      "replacement": ["DOT", "IDENT", "URITail"] },
+    { "from": "q", "input": "", "stacktop": "URITail", "to": "q",
+      "replacement": ["SLASH", "IDENT", "URITail"] },
+    { "from": "q", "input": "", "stacktop": "URITail", "to": "q",
+      "replacement": [] },
+
+    { "from": "q", "input": "", "stacktop": "Version", "to": "q",
+      "replacement": ["HTTP_VERSION_1_0"] },
+
+    { "from": "q", "input": "", "stacktop": "Headers", "to": "q",
+      "replacement": ["Header", "Headers"] },
+    { "from": "q", "input": "", "stacktop": "Headers", "to": "q",
+      "replacement": [] },
+
+    { "from": "q", "input": "", "stacktop": "Header", "to": "q",
+      "replacement": ["HeaderName", "COLON", "SP", "HeaderValue", "CRLF"] },
+
+    { "from": "q", "input": "", "stacktop": "HeaderName", "to": "q",
+      "replacement": ["IDENT"] },
+
+    { "from": "q", "input": "", "stacktop": "HeaderValue", "to": "q",
+      "replacement": ["ValueToken", "ValueTail"] },
+
+    { "from": "q", "input": "", "stacktop": "ValueTail", "to": "q",
+      "replacement": ["SP", "ValueToken", "ValueTail"] },
+    { "from": "q", "input": "", "stacktop": "ValueTail", "to": "q",
+      "replacement": ["SLASH", "ValueToken", "ValueTail"] },
+    { "from": "q", "input": "", "stacktop": "ValueTail", "to": "q",
+      "replacement": ["DOT", "ValueToken", "ValueTail"] },
+    { "from": "q", "input": "", "stacktop": "ValueTail", "to": "q",
+      "replacement": [] },
+
+    { "from": "q", "input": "", "stacktop": "ValueToken", "to": "q",
+      "replacement": ["IDENT"] }
+  ]
+}

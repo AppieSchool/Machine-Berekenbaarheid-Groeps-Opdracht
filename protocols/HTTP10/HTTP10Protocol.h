@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include "HTTPrequest.h"
 #include "HTTP10_semantics.h"
+#include "../grammers/PDA.h"
 class HTTP10Protocol : public Protocol {
 public:
     std::vector<Token> tokenize(const std::string& input) override;

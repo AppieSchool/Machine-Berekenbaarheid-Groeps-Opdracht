@@ -11,7 +11,8 @@ std::vector<Token> HTTP10Protocol::tokenize(const std::string& input) {
 
 // 2. Load the CFG from http10.json
 CFG HTTP10Protocol::getCFG() {
-    return CFG("protocols/HTTP10/http10.json");
+    PDA pda("protocols/HTTP10/http10_pda.json");
+    return pda.toCFG();
 }
 
 SemanticResult HTTP10Protocol::validateSemantics(const std::vector<Token>& tokens)
