@@ -604,3 +604,150 @@ void CFG::addProduction(const production &prod) {
     followCache.clear();
     followInProgress.clear();
 }
+
+// GRAMMAR SIMPLIFICATION ALGORITHMS
+// Remove unreachable symbols (symbols not reachable from start symbol)
+void CFG::removeUnreachableSymbols() {
+    std::set<std::string> reachable;
+    std::set<std::string> toProcess;
+
+    // Start with the start symbol
+    reachable.insert(startSymbol);
+    toProcess.insert(startSymbol);
+
+    // BFS/DFS to find all reachable symbols
+    while (!toProcess.empty()) {
+        std::string current = *toProcess.begin();
+        toProcess.erase(toProcess.begin());
+
+        // Look at all productions with current on LHS
+        for (const auto& prod : productions) {
+            if (prod.lhs == current) {
+                // Add all symbols in body to reachable
+                for (const auto& sym : prod.body) {
+                    if (reachable.find(sym) == reachable.end()) {
+                        reachable.insert(sym);
+
+                        // If it's a variable, process it too
+                        if (std::find(variables.begin(), variables.end(), sym) != variables.end()) {
+                            toProcess.insert(sym);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Remove unreachable variables
+    std::vector<std::string> newVariables;
+    for (const auto& var : variables) {
+        if (reachable.find(var) != reachable.end()) {
+            newVariables.push_back(var);
+        }
+    }
+    variables = newVariables;
+
+    // Remove productions with unreachable LHS
+    std::vector<production> newProductions;
+    for (const auto& prod : productions) {
+        if (reachable.find(prod.lhs) != reachable.end()) {
+            newProductions.push_back(prod);
+        }
+    }
+    productions = newProductions;
+
+    // Clear caches
+    firstCache.clear();
+    followCache.clear();
+    followInProgress.clear();
+}
+
+// Remove useless productions (symbols that cannot derive terminal strings)
+void CFG::removeUselessProductions() {
+    std::set<std::string> productive;
+
+    // Step 1: Find all productive symbols (symbols that can derive terminal strings)
+    bool changed = true;
+    while (changed) {
+        changed = false;
+
+        for (const auto& prod : productions) {
+            // If LHS is already productive, skip
+            if (productive.find(prod.lhs) != productive.end()) {
+                continue;
+            }
+
+            // Check if all symbols in body are productive or terminals
+            bool allProductive = true;
+            for (const auto& sym : prod.body) {
+                // Check if it's a terminal
+                bool isTerminal = std::find(terminals.begin(), terminals.end(), sym) != terminals.end();
+
+                // Check if it's productive
+                bool isProductive = productive.find(sym) != productive.end();
+
+                if (!isTerminal && !isProductive) {
+                    allProductive = false;
+                    break;
+                }
+            }
+
+            // If body is empty (epsilon production), it's productive
+            if (prod.body.empty()) {
+                allProductive = true;
+            }
+
+            if (allProductive) {
+                productive.insert(prod.lhs);
+                changed = true;
+            }
+        }
+    }
+
+    // Step 2: Remove variables that are not productive
+    std::vector<std::string> newVariables;
+    for (const auto& var : variables) {
+        if (productive.find(var) != productive.end()) {
+            newVariables.push_back(var);
+        }
+    }
+    variables = newVariables;
+
+    // Step 3: Remove productions with non-productive symbols
+    std::vector<production> newProductions;
+    for (const auto& prod : productions) {
+        // Keep only if LHS is productive
+        if (productive.find(prod.lhs) == productive.end()) {
+            continue;
+        }
+
+        // Keep only if all variables in body are productive
+        bool allProductiveOrTerminal = true;
+        for (const auto& sym : prod.body) {
+            bool isTerminal = std::find(terminals.begin(), terminals.end(), sym) != terminals.end();
+            bool isProductive = productive.find(sym) != productive.end();
+
+            if (!isTerminal && !isProductive) {
+                allProductiveOrTerminal = false;
+                break;
+            }
+        }
+
+        if (allProductiveOrTerminal) {
+            newProductions.push_back(prod);
+        }
+    }
+    productions = newProductions;
+
+    // Clear caches
+    firstCache.clear();
+    followCache.clear();
+    followInProgress.clear();
+}
+
+// Combined simplification: remove useless then unreachable
+void CFG::simplify() {
+    // Order matters: first remove useless, then unreachable
+    removeUselessProductions();
+    removeUnreachableSymbols();
+}

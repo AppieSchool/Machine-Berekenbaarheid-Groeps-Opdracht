@@ -9,11 +9,35 @@ std::vector<Token> HTTP10Protocol::tokenize(const std::string& input) {
     return tokenizer.tokenize(input);
 }
 
-// 2. Load the CFG from http10.json
+// ----------------------------------------------------------
+// 2. Get CFG for SLR parsing (handcrafted, SLR-friendly)
+// ----------------------------------------------------------
 CFG HTTP10Protocol::getCFG() {
+    // For SLR parsing, use the handcrafted grammar
+    // This grammar is optimized for deterministic bottom-up parsing
     return CFG("protocols/HTTP10/http10.json");
 }
 
+// ----------------------------------------------------------
+// 3. Get CFG from PDA conversion (for CYK and theoretical demonstration)
+// ----------------------------------------------------------
+CFG HTTP10Protocol::getCFGFromPDA() {
+    // Load PDA specification
+    PDA pda("protocols/HTTP10/http10_pda.json");
+
+    // Convert PDA to CFG using standard algorithm
+    CFG cfg = pda.toCFG();
+
+    // Apply grammar simplification
+    cfg.removeUnreachableSymbols();
+    cfg.removeUselessProductions();
+
+    return cfg;
+}
+
+// ----------------------------------------------------------
+// 4. Semantic validation
+// ----------------------------------------------------------
 SemanticResult HTTP10Protocol::validateSemantics(const std::vector<Token>& tokens)
 {
     HTTPRequest req;
@@ -37,4 +61,3 @@ SemanticResult HTTP10Protocol::validateSemantics(const std::vector<Token>& token
 
     return SemanticResult::success();
 }
-

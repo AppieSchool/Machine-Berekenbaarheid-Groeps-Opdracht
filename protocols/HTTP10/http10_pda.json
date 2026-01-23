@@ -1,0 +1,210 @@
+{
+  "States": [
+    "q0",
+    "q_method",
+    "q_uri_start",
+    "q_uri",
+    "q_version",
+    "q_req_end",
+    "q_header_name",
+    "q_header_colon",
+    "q_header_value",
+    "q_header_end",
+    "q_final"
+  ],
+
+  "Alphabet": [
+    "METHOD_GET",
+    "METHOD_POST",
+    "METHOD_HEAD",
+    "SLASH",
+    "DOT",
+    "IDENT",
+    "SP",
+    "COLON",
+    "HTTP_VERSION_1_0",
+    "CRLF"
+  ],
+
+  "StackAlphabet": [
+    "Z0",
+    "REQUEST",
+    "HEADERS",
+    "HEADER"
+  ],
+
+  "StartState": "q0",
+  "StartStack": "Z0",
+
+  "Transitions": [
+    {
+      "from": "q0",
+      "to": "q_method",
+      "input": "",
+      "stacktop": "Z0",
+      "replacement": ["REQUEST"]
+    },
+
+    {
+      "from": "q_method",
+      "to": "q_method",
+      "input": "METHOD_GET",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+    {
+      "from": "q_method",
+      "to": "q_method",
+      "input": "METHOD_POST",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+    {
+      "from": "q_method",
+      "to": "q_method",
+      "input": "METHOD_HEAD",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+
+    {
+      "from": "q_method",
+      "to": "q_uri_start",
+      "input": "SP",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+
+    {
+      "from": "q_uri_start",
+      "to": "q_uri",
+      "input": "SLASH",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+
+    {
+      "from": "q_uri",
+      "to": "q_uri",
+      "input": "IDENT",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+    {
+      "from": "q_uri",
+      "to": "q_uri",
+      "input": "DOT",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+    {
+      "from": "q_uri",
+      "to": "q_uri",
+      "input": "SLASH",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+
+    {
+      "from": "q_uri",
+      "to": "q_version",
+      "input": "SP",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+
+    {
+      "from": "q_version",
+      "to": "q_req_end",
+      "input": "HTTP_VERSION_1_0",
+      "stacktop": "REQUEST",
+      "replacement": ["REQUEST"]
+    },
+
+    {
+      "from": "q_req_end",
+      "to": "q_header_name",
+      "input": "CRLF",
+      "stacktop": "REQUEST",
+      "replacement": ["HEADERS"]
+    },
+
+    {
+      "from": "q_header_name",
+      "to": "q_header_colon",
+      "input": "IDENT",
+      "stacktop": "HEADERS",
+      "replacement": ["HEADER"]
+    },
+
+    {
+      "from": "q_header_colon",
+      "to": "q_header_value",
+      "input": "COLON",
+      "stacktop": "HEADER",
+      "replacement": ["HEADER"]
+    },
+
+    {
+      "from": "q_header_value",
+      "to": "q_header_value",
+      "input": "SP",
+      "stacktop": "HEADER",
+      "replacement": ["HEADER"]
+    },
+
+    {
+      "from": "q_header_value",
+      "to": "q_header_value",
+      "input": "IDENT",
+      "stacktop": "HEADER",
+      "replacement": ["HEADER"]
+    },
+    {
+      "from": "q_header_value",
+      "to": "q_header_value",
+      "input": "SLASH",
+      "stacktop": "HEADER",
+      "replacement": ["HEADER"]
+    },
+    {
+      "from": "q_header_value",
+      "to": "q_header_value",
+      "input": "DOT",
+      "stacktop": "HEADER",
+      "replacement": ["HEADER"]
+    },
+
+    {
+      "from": "q_header_value",
+      "to": "q_header_end",
+      "input": "CRLF",
+      "stacktop": "HEADER",
+      "replacement": []
+    },
+
+    {
+      "from": "q_header_end",
+      "to": "q_header_name",
+      "input": "",
+      "stacktop": "HEADERS",
+      "replacement": ["HEADERS"]
+    },
+
+    {
+      "from": "q_header_end",
+      "to": "q_final",
+      "input": "CRLF",
+      "stacktop": "HEADERS",
+      "replacement": []
+    },
+
+    {
+      "from": "q_header_name",
+      "to": "q_final",
+      "input": "CRLF",
+      "stacktop": "HEADERS",
+      "replacement": []
+    }
+  ]
+}

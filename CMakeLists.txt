@@ -77,6 +77,9 @@ target_include_directories(imgui PUBLIC
 configure_file(protocols/HTTP10/http10.json
         protocols/HTTP10/http10.json COPYONLY)
 
+configure_file(protocols/HTTP10/http10_pda.json
+        protocols/HTTP10/http10_pda.json COPYONLY)
+
 # ----------------------------------------------------
 # GLFW integration (platform-specific)
 # ----------------------------------------------------

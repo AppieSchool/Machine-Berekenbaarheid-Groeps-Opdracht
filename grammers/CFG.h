@@ -67,6 +67,10 @@ public:
 
     std::vector<std::string> followSet(const std::string& symbol);
 
+    void removeUnreachableSymbols();
+    void removeUselessProductions();
+    void simplify();
+
     DiagnosticInfo buildDiagnostic(
         const std::vector<std::string>& expected,
         const std::string& got);
