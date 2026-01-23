@@ -38,14 +38,14 @@ Het systeem steunt volledig op de kernconcepten uit de cursus:
 
 ## Implementatie
 
-De implementatie bestaat uit de volgende componenten:
+De implementatie voorziet twee niveaus:
 
+- **CFG-laag**: protocollen kunnen rechtstreeks als **CFG in JSON** gespecificeerd worden (zoals momenteel voor HTTP/1.0 gebeurt).  
+- **PDA-laag**: complexe protocolstructuren kunnen eerst als **PDA in JSON** gemodelleerd worden; deze PDA wordt dan via de `PDA`‑klasse automatisch omgezet naar een **CFG**, zodat alle verdere algoritmes (CYK, LL(1), SLR, …) altijd tegen dezelfde grammatica‑representatie werken.
 
-## PDA → CFG
-
-Complexe protocolstructuren (zoals geneste headers of herhaalde velden) worden eerst gemodelleerd met een **PDA**.
-
-Deze PDA wordt automatisch omgezet naar een **CFG**, zodat alle verdere algoritmes uniform op dezelfde grammaticale representatie kunnen werken.
+Concreet betekent dit dat je voor nieuwe protocollen kunt kiezen:
+- óf een CFG‑specificatie te schrijven,
+- óf een PDA‑specificatie te geven en de bijhorende CFG dynamisch te laten genereren.
 
 ---
 

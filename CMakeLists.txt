@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(Machine-Berekenbaarheid-Groeps-Opdracht
         main.cpp
         grammers/CFG.cpp
+        grammers/PDA.cpp
         parsers/SLR.cpp
         protocols/HTTP10/HTTP10Protocol.cpp
         protocols/HTTP10/HTTP10Tokenizer.cpp
