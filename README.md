@@ -38,14 +38,14 @@ Het systeem steunt volledig op de kernconcepten uit de cursus:
 
 ## Implementatie
 
-De implementatie voorziet twee niveaus:
+De implementatie bestaat uit de volgende componenten:
 
-- **CFG-laag**: protocollen kunnen rechtstreeks als **CFG in JSON** gespecificeerd worden (zoals momenteel voor HTTP/1.0 gebeurt).  
-- **PDA-laag**: complexe protocolstructuren kunnen eerst als **PDA in JSON** gemodelleerd worden; deze PDA wordt dan via de `PDA`‑klasse automatisch omgezet naar een **CFG**, zodat alle verdere algoritmes (CYK, LL(1), SLR, …) altijd tegen dezelfde grammatica‑representatie werken.
 
-Concreet betekent dit dat je voor nieuwe protocollen kunt kiezen:
-- óf een CFG‑specificatie te schrijven,
-- óf een PDA‑specificatie te geven en de bijhorende CFG dynamisch te laten genereren.
+## PDA → CFG
+
+Complexe protocolstructuren (zoals geneste headers of herhaalde velden) worden eerst gemodelleerd met een **PDA**.
+
+Deze PDA wordt automatisch omgezet naar een **CFG**, zodat alle verdere algoritmes uniform op dezelfde grammaticale representatie kunnen werken.
 
 ---
 
@@ -65,11 +65,11 @@ CYK geeft een **antwoord** op de vraag of een bericht tot de taal behoort, zelfs
 We gebruiken twee parsers met complementaire eigenschappen:
 
 - **LL(1)**
-    - snelle foutmeldingen
-    - duidelijke *expected tokens*
+  - snelle foutmeldingen
+  - duidelijke *expected tokens*
 - **SLR**
-    - deterministische bottom-up parsing
-    - detecteert grammaticale conflicten
+  - deterministische bottom-up parsing
+  - detecteert grammaticale conflicten
 
 Samen zorgen ze voor **efficiënte én precieze analyse**.
 

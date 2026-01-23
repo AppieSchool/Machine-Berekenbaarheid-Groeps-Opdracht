@@ -92,31 +92,49 @@ CFG PDA::toCFG() {
         productions.push_back(prod);
     }
 
+    // Helper: genereer alle tuples (r1..r_{k-1}) van states (cartesisch product)
+    // k = stackPush.size()
+    auto generateStateTuples = [&](int len) {
+        std::vector<std::vector<std::string>> tuples;
+        if (len <= 0) {
+            tuples.push_back({});
+            return tuples;
+        }
+
+        // iteratief opbouwen: start met lege tuple
+        tuples.push_back({});
+        for (int i = 0; i < len; i++) {
+            std::vector<std::vector<std::string>> next;
+            next.reserve(tuples.size() * states.size());
+            for (const auto& t : tuples) {
+                for (const auto& s : states) {
+                    auto copy = t;
+                    copy.push_back(s);
+                    next.push_back(std::move(copy));
+                }
+            }
+            tuples = std::move(next);
+        }
+        return tuples;
+    };
+
     // 3) Producties op basis van de overgangen van de PDA
-    //
-    // We ondersteunen hier twee vormen:
-    //  - Pop: A → ε   (stackPush leeg)
-    //  - Vervang: A → B    (stackPush met lengte 1)
-    //
-    // Voor complexere stackPush (lengte > 1) kan je later uitbreiden.
     for (const auto& t : transitions) {
-        // Pop-transitie: (p, a, A → q, ε)
+
+        // (p, a, A -> q, ε)
         if (t.stackPush.empty()) {
             json prod;
             prod["head"] = varName(t.fromState, t.stackTop, t.toState);
             prod["body"] = json::array();
 
-            // Epsilon-overgangen: lege body
             if (!t.inputSymbol.empty()) {
-                // Transitie leest een echt symbool
                 prod["body"].push_back(t.inputSymbol);
             }
-
             productions.push_back(prod);
             continue;
         }
 
-        // Enkele push: (p, a, A → q, B)
+        // (p, a, A -> q, B)  (k=1)
         if (t.stackPush.size() == 1) {
             const std::string& B = t.stackPush[0];
 
@@ -136,8 +154,39 @@ CFG PDA::toCFG() {
             continue;
         }
 
-        // Voor nu: complexere stackPush (lengte > 1) niet ondersteunen
-        // Je kunt dit later uitbreiden met de volledige constructie.
+        // Algemeen geval: (p, a, A -> q, B1 B2 ... Bk), k >= 2
+        const int k = static_cast<int>(t.stackPush.size());
+
+        // kies rk (finale state) vrij in Q
+        for (const auto& rk : states) {
+
+            // kies (r1..r_{k-1}) als tuple in Q^(k-1)
+            auto tuples = generateStateTuples(k - 1);
+
+            for (const auto& mid : tuples) {
+                // mid heeft lengte k-1: r1..r_{k-1}
+                json prod;
+                prod["head"] = varName(t.fromState, t.stackTop, rk);
+                prod["body"] = json::array();
+
+                if (!t.inputSymbol.empty()) {
+                    prod["body"].push_back(t.inputSymbol);
+                }
+
+                // B1: [q, B1, r1]
+                prod["body"].push_back(varName(t.toState, t.stackPush[0], mid[0]));
+
+                // B2..B_{k-1}: [r_{i-1}, Bi, r_i]
+                for (int i = 1; i < k - 1; i++) {
+                    prod["body"].push_back(varName(mid[i - 1], t.stackPush[i], mid[i]));
+                }
+
+                // Bk: [r_{k-1}, Bk, rk]
+                prod["body"].push_back(varName(mid[k - 2], t.stackPush[k - 1], rk));
+
+                productions.push_back(prod);
+            }
+        }
     }
 
     // Zet variabelen om naar vector en sorteer
@@ -152,3 +201,4 @@ CFG PDA::toCFG() {
 
     return CFG(jsonObj);
 }
+
